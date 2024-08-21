@@ -1,10 +1,10 @@
 const { 
     SlashCommandBuilder, 
-    PermissionFlagsBits, 
     ModalBuilder, 
     ActionRowBuilder, 
     TextInputBuilder, 
-    TextInputStyle
+    TextInputStyle,
+    PermissionFlagsBits
 } = require('discord.js');
 const guildRepository = require('../../database/repository/guildRepository');
 const { logger } = require('../../functions/logger');
@@ -12,18 +12,21 @@ const { logger } = require('../../functions/logger');
 module.exports = {
     name: "automod",
     description: "Configura as opções do AutoMod",
-    userPermissions: [PermissionFlagsBits.Administrator],
+    userPermissions: ["Administrator"],
 
     data: new SlashCommandBuilder()
         .setName('automod')
         .setDescription('Configura as opções do AutoMod')
-        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
-
+        .setDefaultMemberPermissions('8'),
     run: async (client, interaction) => {
         await module.exports.execute(interaction);
     },
 
     async execute(interaction) {
+        if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
+            return interaction.reply({ content: "Você não tem permissão para usar este comando.", ephemeral: true });
+        }
+
         const modal = new ModalBuilder()
             .setCustomId('automod-config')
             .setTitle('Configuração do AutoMod');
