@@ -42,7 +42,6 @@ async function startBot() {
         if (config.database) {
             console.log("Conectando ao banco de dados...");
             try {
-                console.log("URL do MongoDB:", config.mongodb_url);
 
                 await require("./bot/discord/structures/database/connect").connect(config.mongodb_url);
                 console.log("Conexão com o banco de dados estabelecida com sucesso.");
