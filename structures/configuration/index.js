@@ -9,4 +9,5 @@ module.exports = {
     sharding: process.env.SHARDING === 'true',
     database: process.env.DATABASE === 'true',
     brapi_token: process.env.BRAPI_TOKEN,
+    lolEsportsApiKey: process.env.LOL_ESPORTS_API_KEY,
 }
