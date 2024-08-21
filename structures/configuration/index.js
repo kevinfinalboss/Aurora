@@ -8,4 +8,5 @@ module.exports = {
     developers: process.env.DEVELOPERS ? process.env.DEVELOPERS.split(',') : [],
     sharding: process.env.SHARDING === 'true',
     database: process.env.DATABASE === 'true',
+    brapi_token: process.env.BRAPI_TOKEN,
 }
