@@ -4,14 +4,16 @@ async function loadConfig() {
     try {
         const awsConfig = await getConfigValues();
 
-        const config = {
+        console.log("Valor de mongodb_url recebido:", awsConfig.mongodb_url);
+
+        const config = {    
             client_token: awsConfig.client_token,
             client_id: awsConfig.client_id,
             client_prefix: 'gomes!',
             mongodb_url: awsConfig.mongodb_url,
             developers: ['906552238619639878'],
             sharding: false,
-            database: false,
+            database: true,
             brapi_token: awsConfig.brapi_token,
             lolEsportsApiKey: awsConfig.lolEsportsApiKey,
         };
