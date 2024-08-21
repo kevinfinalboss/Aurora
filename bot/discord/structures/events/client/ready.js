@@ -1,8 +1,7 @@
 const { ActivityType } = require("discord.js");
-const client = require("../../client");
 const { logger } = require("../../functions/logger");
 
-async function setInteractivePresence() {
+function setInteractivePresence(client) {
     const totalUsers = client.guilds.cache.reduce((acc, guild) => acc + guild.memberCount, 0);
     const totalGuilds = client.guilds.cache.size;
 
@@ -28,12 +27,15 @@ async function setInteractivePresence() {
     logger(`Presença atualizada: ${activity.type} ${activity.name} | Status: ${status}`, "info");
 }
 
-client.on("ready", async () => {
-    console.log("\n---------------------");
-    logger(`${client.user.tag} está pronto!`, "success");
-    console.log("---------------------");
+module.exports = {
+    name: 'ready',
+    execute: (client) => {
+        console.log("\n---------------------");
+        logger(`${client.user.tag} está pronto!`, "success");
+        console.log("---------------------");
 
-    setInteractivePresence();
+        setInteractivePresence(client);
 
-    setInterval(setInteractivePresence, 5 * 60 * 1000);
-});
+        setInterval(() => setInteractivePresence(client), 5 * 60 * 1000);
+    }
+};
