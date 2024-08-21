@@ -10,10 +10,18 @@ const guildRepository = require('../../database/repository/guildRepository');
 const { logger } = require('../../functions/logger');
 
 module.exports = {
+    name: "automod",
+    description: "Configura as opções do AutoMod",
+    userPermissions: [PermissionFlagsBits.Administrator],
+
     data: new SlashCommandBuilder()
         .setName('automod')
         .setDescription('Configura as opções do AutoMod')
         .setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
+
+    run: async (client, interaction) => {
+        await module.exports.execute(interaction);
+    },
 
     async execute(interaction) {
         const modal = new ModalBuilder()
