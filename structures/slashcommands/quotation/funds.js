@@ -1,21 +1,22 @@
 const { Client, CommandInteraction, ApplicationCommandOptionType, EmbedBuilder } = require("discord.js");
 const axios = require("axios");
 
+// Lista de fundos imobiliários suportados
 const SUPPORTED_FIIS = [
-    { name: "KNRI11 - Kinea Renda Imobiliária", value: "KNRI11.SA" },
-    { name: "HGLG11 - CSHG Logística", value: "HGLG11.SA" },
-    { name: "MXRF11 - Maxi Renda", value: "MXRF11.SA" },
-    { name: "BCFF11 - BTG Pactual Fundo de Fundos", value: "BCFF11.SA" },
-    { name: "XPLG11 - XP Log", value: "XPLG11.SA" },
-    { name: "XPML11 - XP Malls", value: "XPML11.SA" },
-    { name: "VISC11 - Vinci Shopping Centers", value: "VISC11.SA" },
-    { name: "HGRE11 - CSHG Real Estate", value: "HGRE11.SA" },
-    { name: "GGRC11 - GGR Covepi Renda", value: "GGRC11.SA" },
-    { name: "VILG11 - Vinci Logística", value: "VILG11.SA" },
+    { name: "KNRI11 - Kinea Renda Imobiliária", value: "KNRI11" },
+    { name: "HGLG11 - CSHG Logística", value: "HGLG11" },
+    { name: "MXRF11 - Maxi Renda", value: "MXRF11" },
+    { name: "BCFF11 - BTG Pactual Fundo de Fundos", value: "BCFF11" },
+    { name: "XPLG11 - XP Log", value: "XPLG11" },
+    { name: "XPML11 - XP Malls", value: "XPML11" },
+    { name: "VISC11 - Vinci Shopping Centers", value: "VISC11" },
+    { name: "HGRE11 - CSHG Real Estate", value: "HGRE11" },
+    { name: "GGRC11 - GGR Covepi Renda", value: "GGRC11" },
+    { name: "VILG11 - Vinci Logística", value: "VILG11" },
 ];
 
 module.exports = {
-    name: "fundos",
+    name: "fii",
     description: "Obter informações sobre um Fundo de Investimento Imobiliário (FII)",
     options: [
         {
@@ -39,73 +40,51 @@ module.exports = {
         const selectedFII = interaction.options.getString("fundo");
 
         try {
-            const response = await axios.get(`https://query1.finance.yahoo.com/v8/finance/chart/${selectedFII}?interval=1d`);
+            const response = await axios.get(`https://brapi.dev/api/quote/${selectedFII}?fundamental=true`);
             
-            const result = response.data.chart.result[0];
-            if (!result || !result.meta) {
+            if (!response.data || !response.data.results || response.data.results.length === 0) {
                 throw new Error("Dados incompletos recebidos da API");
             }
 
-            const {
-                regularMarketPrice,
-                regularMarketChange,
-                regularMarketChangePercent,
-                regularMarketDayHigh,
-                regularMarketDayLow,
-                regularMarketVolume,
-                regularMarketPreviousClose,
-            } = result.meta;
-
+            const fiiData = response.data.results[0];
             const fiiInfo = SUPPORTED_FIIS.find(f => f.value === selectedFII);
 
             const embed = new EmbedBuilder()
                 .setTitle(`📊 Informações: ${fiiInfo.name}`)
-                .setDescription(`Dados atualizados em: ${new Date().toLocaleString('pt-BR')}`)
-                .setColor("#0099ff")
-                .setThumbnail("https://i.imgur.com/8dTMXLO.png")
+                .setDescription(`Dados atualizados em: ${new Date(fiiData.updatedAt).toLocaleString('pt-BR')}`)
+                .setColor(fiiData.change >= 0 ? "#00FF00" : "#FF0000")
+                .setThumbnail(fiiData.logourl || "https://i.imgur.com/8dTMXLO.png")
                 .setTimestamp()
                 .setFooter({ 
-                    text: "Dados fornecidos por Yahoo Finance", 
-                    iconURL: "https://s.yimg.com/cv/apiv2/default/20180926/logo_finance_192px.png" 
+                    text: "Dados fornecidos por Brapi", 
+                    iconURL: "https://brapi.dev/favicon.svg" 
                 });
 
-            const addFieldIfDefined = (name, value, inline = true) => {
-                if (value !== undefined && value !== null) {
-                    embed.addFields({ name, value: value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), inline });
+            // Função auxiliar para adicionar campos com verificação e formatação
+            const addFieldIfDefined = (name, value, inline = true, formatFunction = null) => {
+                if (value !== undefined && value !== null && value !== 0) {
+                    const formattedValue = formatFunction ? formatFunction(value) : value.toString();
+                    embed.addFields({ name, value: formattedValue, inline });
                 }
             };
 
-            addFieldIfDefined("Preço Atual", regularMarketPrice);
-            
-            if (regularMarketChange !== undefined && regularMarketChangePercent !== undefined) {
-                const changeValue = `${regularMarketChange.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} (${regularMarketChangePercent.toFixed(2)}%)`;
-                embed.addFields({ name: "Variação", value: changeValue, inline: true });
-                embed.setColor(regularMarketChange >= 0 ? "#00FF00" : "#FF0000");
-            }
+            const formatCurrency = (value) => `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+            const formatPercentage = (value) => `${value.toFixed(2)}%`;
+            const formatLargeNumber = (value) => value.toLocaleString('pt-BR');
 
-            addFieldIfDefined("Abertura", regularMarketPreviousClose);
-            addFieldIfDefined("Máxima do Dia", regularMarketDayHigh);
-            addFieldIfDefined("Mínima do Dia", regularMarketDayLow);
+            addFieldIfDefined("Preço Atual", fiiData.regularMarketPrice, true, formatCurrency);
+            addFieldIfDefined("Variação", fiiData.change, true, (value) => `${formatCurrency(value)} (${formatPercentage(fiiData.changePercent)})`);
+            addFieldIfDefined("Abertura", fiiData.regularMarketOpen, true, formatCurrency);
+            addFieldIfDefined("Máxima do Dia", fiiData.regularMarketDayHigh, true, formatCurrency);
+            addFieldIfDefined("Mínima do Dia", fiiData.regularMarketDayLow, true, formatCurrency);
+            addFieldIfDefined("Volume", fiiData.regularMarketVolume, true, formatLargeNumber);
+            addFieldIfDefined("Valor de Mercado", fiiData.marketCap, false, (value) => `${formatCurrency(value / 1000000)} M`);
+            addFieldIfDefined("P/VP", fiiData.priceToBook, true, (value) => value.toFixed(2));
+            addFieldIfDefined("Dividend Yield", fiiData.dividendYield, true, formatPercentage);
+            addFieldIfDefined("Último Rendimento", fiiData.lastDividend, true, formatCurrency);
 
-            if (regularMarketVolume !== undefined) {
-                embed.addFields({ name: "Volume", value: regularMarketVolume.toLocaleString('pt-BR'), inline: true });
-            }
-
-            try {
-                const quoteResponse = await axios.get(`https://query1.finance.yahoo.com/v10/finance/quoteSummary/${selectedFII}?modules=summaryDetail,price`);
-                const { summaryDetail, price } = quoteResponse.data.quoteSummary.result[0];
-
-                if (summaryDetail.dividendYield && summaryDetail.dividendYield.raw) {
-                    embed.addFields({ name: "Dividend Yield", value: `${(summaryDetail.dividendYield.raw * 100).toFixed(2)}%`, inline: true });
-                }
-                if (summaryDetail.marketCap && summaryDetail.marketCap.raw) {
-                    embed.addFields({ name: "Valor de Mercado", value: `R$ ${(summaryDetail.marketCap.raw / 1000000).toFixed(2)} M`, inline: true });
-                }
-                if (price.longName) {
-                    embed.setTitle(`📊 Informações: ${price.longName} (${selectedFII.replace('.SA', '')})`);
-                }
-            } catch (error) {
-                console.error("Erro ao obter informações adicionais:", error);
+            if (fiiData.longName) {
+                embed.setTitle(`📊 Informações: ${fiiData.longName} (${selectedFII})`);
             }
 
             await interaction.editReply({ embeds: [embed] });
