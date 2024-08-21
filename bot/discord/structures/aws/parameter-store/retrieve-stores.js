@@ -1,6 +1,14 @@
+require('dotenv').config();
+
 const { SSMClient, GetParameterCommand } = require("@aws-sdk/client-ssm");
 
-const client = new SSMClient({ region: "us-east-1" });
+const client = new SSMClient({
+    region: process.env.AWS_REGION,
+    credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID, 
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY 
+    }
+});
 
 async function getConfigValues() {
     const params = {
@@ -15,14 +23,19 @@ async function getConfigValues() {
 
     for (const [key, param] of Object.entries(params)) {
         try {
+            console.log(`Tentando recuperar o parâmetro SSM: ${param}`);
+            
             const command = new GetParameterCommand({
                 Name: param,
                 WithDecryption: true
             });
+
             const response = await client.send(command);
             config[key] = response.Parameter.Value;
+
+            console.log(`Parâmetro SSM '${param}' recuperado com sucesso.`);
         } catch (error) {
-            console.error(`Erro ao recuperar ${param}: ${error.message}`);
+            console.error(`Erro ao recuperar o parâmetro '${param}': ${error.message}`);
         }
     }
 
