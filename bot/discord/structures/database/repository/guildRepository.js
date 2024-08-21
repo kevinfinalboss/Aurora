@@ -75,6 +75,23 @@ class GuildRepository {
         logger(`Filtro de imagens explícitas alternado para ${newState} na guild ${guildId}`, 'info');
         return result;
     }
+
+    async updateGuildSettings(guildId, settings) {
+        logger(`Atualizando configurações para a guild: ${guildId}`, 'info');
+        const result = await Guild.findOneAndUpdate(
+            { guildId },
+            { $set: settings },
+            { new: true, upsert: true }
+        );
+        
+        if (result) {
+            logger(`Configurações atualizadas para a guild ${guildId}`, 'info');
+        } else {
+            logger(`Falha ao atualizar configurações para a guild ${guildId}`, 'error');
+        }
+        
+        return result;
+    }
 }
 
 module.exports = new GuildRepository();
