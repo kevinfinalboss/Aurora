@@ -20,9 +20,15 @@ class GuildRepository {
             { $set: { automod: settings } },
             { new: true, upsert: true }
         );
-        logger(`Configurações do AutoMod atualizadas para a guild ${guildId}`, 'info');
+        
+        if (result) {
+            logger(`Configurações do AutoMod atualizadas para a guild ${guildId}`, 'info');
+        } else {
+            logger(`Falha ao atualizar configurações do AutoMod para a guild ${guildId}`, 'error');
+        }
+        
         return result;
-    }
+    }    
 
     async addBannedWord(guildId, word) {
         logger(`Adicionando palavra banida para a guild: ${guildId}`, 'info');

@@ -80,10 +80,23 @@ async function handleToggleAutomod(interaction) {
     logger(`Alternando estado do AutoMod para a guild ${interaction.guildId}`, 'info');
     const guildSettings = await guildRepository.getGuildSettings(interaction.guildId);
     const newState = !guildSettings.automod.enabled;
-    const updatedSettings = await guildRepository.updateAutomodSettings(interaction.guildId, { ...guildSettings.automod, enabled: newState });
-    logger(`AutoMod ${newState ? 'ativado' : 'desativado'} para a guild ${interaction.guildId}`, 'info');
-    await interaction.update({ content: `AutoMod foi ${newState ? 'ativado' : 'desativado'} para este servidor.`, components: [] });
+    const updatedSettings = await guildRepository.updateAutomodSettings(interaction.guildId, {
+        enabled: newState,
+        bannedWords: guildSettings.automod.bannedWords,
+        maxMentions: guildSettings.automod.maxMentions,
+        logChannelId: guildSettings.automod.logChannelId, 
+        explicitImageFilter: guildSettings.automod.explicitImageFilter
+    });
+    
+    if (updatedSettings) {
+        logger(`AutoMod ${newState ? 'ativado' : 'desativado'} para a guild ${interaction.guildId}`, 'info');
+        await interaction.update({ content: `AutoMod foi ${newState ? 'ativado' : 'desativado'} para este servidor.`, components: [] });
+    } else {
+        logger(`Falha ao alternar AutoMod para a guild ${interaction.guildId}`, 'error');
+        await interaction.update({ content: `Houve um erro ao tentar ${newState ? 'ativar' : 'desativar'} o AutoMod.`, components: [] });
+    }
 }
+
 
 async function handleAddWord(interaction) {
     await interaction.update({ content: 'Digite a palavra que deseja adicionar:', components: [] });
