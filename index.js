@@ -17,7 +17,6 @@ async function startBot() {
             process.exit(1);
         }
 
-
         if (config.sharding) {
             const manager = new ShardingManager("./bot/discord/structures/client.js", {
                 token: config.client_token,
@@ -43,10 +42,14 @@ async function startBot() {
         if (config.database) {
             console.log("Conectando ao banco de dados...");
             try {
-                await require("./bot/discord/structures/database/connect").connect();
+                console.log("URL do MongoDB:", config.mongodb_url);
+
+                // Passa a URL do MongoDB como argumento para a função connect
+                await require("./bot/discord/structures/database/connect").connect(config.mongodb_url);
                 console.log("Conexão com o banco de dados estabelecida com sucesso.");
             } catch (error) {
                 console.error("Erro ao conectar ao banco de dados:", error);
+                process.exit(1);
             }
         }
 
