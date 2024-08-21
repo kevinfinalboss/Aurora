@@ -22,9 +22,7 @@ async function getConfigValues() {
     const config = {};
 
     for (const [key, param] of Object.entries(params)) {
-        try {
-            console.log(`Tentando recuperar o parâmetro SSM: ${param}`);
-            
+        try {            
             const command = new GetParameterCommand({
                 Name: param,
                 WithDecryption: true
