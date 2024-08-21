@@ -40,8 +40,6 @@ module.exports = {
         const selectedFII = interaction.options.getString("fundo");
 
         try {
-            console.log("Token Brapi:", config.brapi_token);
-
             const response = await axios.get(`https://brapi.dev/api/quote/${selectedFII}?fundamental=true`, {
                 headers: {
                     'Authorization': `Bearer ${config.brapi_token}`
