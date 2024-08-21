@@ -1,6 +1,7 @@
 const { PermissionsBitField, EmbedBuilder } = require("discord.js");
 const { client_prefix, developers } = require("../../configuration/index");
 const { logger } = require("../../functions/logger");
+const guildRepository = require('../../database/repository/guildRepository');
 
 module.exports = {
     name: 'messageCreate',
@@ -8,9 +9,8 @@ module.exports = {
         try {
             if (message.author.bot || !message.guild) return;
 
-            // AutoMod logic
-            const guildSettings = await client.getGuildSettings(message.guild.id);
-            if (guildSettings.automod.enabled) {
+            const guildSettings = await guildRepository.getGuildSettings(message.guild.id);
+            if (guildSettings.automod && guildSettings.automod.enabled) {
                 const containsBannedWord = guildSettings.automod.bannedWords.some(word => 
                     message.content.toLowerCase().includes(word.toLowerCase())
                 );
@@ -38,17 +38,18 @@ module.exports = {
                         logger(`Não foi possível enviar DM para ${message.author.tag} no servidor ${message.guild.name}`, "warn");
                     }
 
-                    const modChannel = message.guild.channels.cache.get(guildSettings.automod.logChannelId);
-                    if (modChannel) {
-                        modChannel.send({ embeds: [warningEmbed] });
-                        logger(`Log de AutoMod enviado para o canal ${modChannel.name} no servidor ${message.guild.name}`, "info");
+                    if (guildSettings.automod.logChannelId) {
+                        const modChannel = message.guild.channels.cache.get(guildSettings.automod.logChannelId);
+                        if (modChannel) {
+                            modChannel.send({ embeds: [warningEmbed] });
+                            logger(`Log de AutoMod enviado para o canal ${modChannel.name} no servidor ${message.guild.name}`, "info");
+                        }
                     }
 
-                    return; // Stop processing the message after AutoMod action
+                    return;
                 }
             }
 
-            // Command handling logic
             if (!message.content.startsWith(client_prefix)) return;
 
             const args = message.content.slice(client_prefix.length).trim().split(/ +/g);
