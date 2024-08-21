@@ -28,6 +28,13 @@ const memberSchema = new mongoose.Schema({
     isBot: { type: Boolean, default: false },
 }, { _id: false });
 
+const automodSchema = new mongoose.Schema({
+    enabled: { type: Boolean, default: false },
+    bannedWords: { type: [String], default: [] },
+    maxMentions: { type: Number, default: 5 },
+    logChannelId: { type: String, default: null },
+}, { _id: false });
+
 const guildSchema = new mongoose.Schema({
     clientId: { type: String, required: true },
     guildId: { type: String, required: true, unique: true },
@@ -41,6 +48,7 @@ const guildSchema = new mongoose.Schema({
     channels: { type: [channelSchema], default: [] },
     roles: { type: [roleSchema], default: [] },
     members: { type: [memberSchema], default: [] },
+    automod: { type: automodSchema, default: () => ({}) },
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },
 }, { timestamps: true });
