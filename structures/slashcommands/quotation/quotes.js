@@ -1,5 +1,6 @@
 const { Client, CommandInteraction, ApplicationCommandOptionType, EmbedBuilder } = require("discord.js");
 const axios = require("axios");
+const config = require("../../config"); // Ajuste o caminho conforme necessário
 
 // Lista de fundos imobiliários suportados
 const SUPPORTED_FIIS = [
@@ -40,7 +41,7 @@ module.exports = {
         const selectedFII = interaction.options.getString("fundo");
 
         try {
-            const response = await axios.get(`https://brapi.dev/api/quote/${selectedFII}?fundamental=true`);
+            const response = await axios.get(`https://brapi.dev/api/quote/${selectedFII}?fundamental=true&token=${config.brapi_token}`);
             
             if (!response.data || !response.data.results || response.data.results.length === 0) {
                 throw new Error("Dados incompletos recebidos da API");
