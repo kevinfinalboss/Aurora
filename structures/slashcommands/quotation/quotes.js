@@ -1,8 +1,7 @@
 const { Client, CommandInteraction, ApplicationCommandOptionType, EmbedBuilder } = require("discord.js");
 const axios = require("axios");
-const config = require("../../config"); // Ajuste o caminho conforme necessário
+const config = require("../../configuration/index");
 
-// Lista de fundos imobiliários suportados
 const SUPPORTED_FIIS = [
     { name: "KNRI11 - Kinea Renda Imobiliária", value: "KNRI11" },
     { name: "HGLG11 - CSHG Logística", value: "HGLG11" },
@@ -41,7 +40,7 @@ module.exports = {
         const selectedFII = interaction.options.getString("fundo");
 
         try {
-            console.log("Token Brapi:", config.brapi_token); // Log para verificar o token
+            console.log("Token Brapi:", config.brapi_token);
 
             const response = await axios.get(`https://brapi.dev/api/quote/${selectedFII}?fundamental=true`, {
                 headers: {
@@ -67,7 +66,6 @@ module.exports = {
                     iconURL: "https://brapi.dev/favicon.svg" 
                 });
 
-            // Função auxiliar para adicionar campos com verificação e formatação
             const addFieldIfDefined = (name, value, inline = true, formatFunction = null) => {
                 if (value !== undefined && value !== null && value !== 0) {
                     const formattedValue = formatFunction ? formatFunction(value) : value.toString();
