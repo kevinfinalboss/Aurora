@@ -41,7 +41,13 @@ module.exports = {
         const selectedFII = interaction.options.getString("fundo");
 
         try {
-            const response = await axios.get(`https://brapi.dev/api/quote/${selectedFII}?fundamental=true&token=${config.brapi_token}`);
+            console.log("Token Brapi:", config.brapi_token); // Log para verificar o token
+
+            const response = await axios.get(`https://brapi.dev/api/quote/${selectedFII}?fundamental=true`, {
+                headers: {
+                    'Authorization': `Bearer ${config.brapi_token}`
+                }
+            });
             
             if (!response.data || !response.data.results || response.data.results.length === 0) {
                 throw new Error("Dados incompletos recebidos da API");
@@ -90,7 +96,7 @@ module.exports = {
 
             await interaction.editReply({ embeds: [embed] });
         } catch (error) {
-            console.error("Erro ao obter informações do FII:", error);
+            console.error("Erro ao obter informações do FII:", error.response ? error.response.data : error.message);
             await interaction.editReply("Desculpe, ocorreu um erro ao obter as informações do FII. Os dados podem estar temporariamente indisponíveis. Por favor, tente novamente mais tarde.");
         }
     }
