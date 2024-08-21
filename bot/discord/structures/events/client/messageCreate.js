@@ -48,7 +48,6 @@ module.exports = {
 
                     return;
                 }
-
             }
 
             if (!message.content.startsWith(client_prefix)) return;
