@@ -50,6 +50,8 @@ const guildSchema = new mongoose.Schema({
     roles: { type: [roleSchema], default: [] },
     members: { type: [memberSchema], default: [] },
     automod: { type: automodSchema, default: () => ({}) },
+    welcomeChannelId: { type: String, default: null },
+    leaveChannelId: { type: String, default: null },
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },
 }, { timestamps: true });
