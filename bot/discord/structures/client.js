@@ -1,8 +1,9 @@
 const { readdirSync } = require("fs");
-const { REST, Routes, Client, Collection, EmbedBuilder } = require('discord.js');
+const { REST, Routes, Client, Collection, EmbedBuilder, GatewayIntentBits } = require('discord.js');
 const { loadConfig } = require("./configuration/index");
 const { logger } = require("./functions/logger");
 const path = require("path");
+const { Riffy } = require("riffy");
 
 async function initializeClient() {
     const chalk = (await import('chalk')).default;
@@ -19,11 +20,56 @@ async function initializeClient() {
 
     const client = new Client({
         intents: [
-            "Guilds",
-            "GuildMembers",
-            "GuildMessages",
-            "MessageContent"
+            GatewayIntentBits.Guilds,
+            GatewayIntentBits.GuildMembers,
+            GatewayIntentBits.GuildMessages,
+            GatewayIntentBits.MessageContent,
+            GatewayIntentBits.GuildVoiceStates
         ]
+    });
+
+    // Configuração do Riffy
+    const nodes = [
+        {
+            host: "37.114.42.191",
+            port: 9906, 
+            password: "danteisnttaken", 
+            secure: false
+        },
+    ];
+
+    client.riffy = new Riffy(client, nodes, {
+        send: (payload) => {
+            const guild = client.guilds.cache.get(payload.d.guild_id);
+            if (guild) guild.shard.send(payload);
+        },
+        defaultSearchPlatform: "ytmsearch",
+        restVersion: "v4" 
+    });
+
+    client.on("ready", () => {
+        client.riffy.init(client.user.id);
+    });
+
+    client.on("raw", (d) => {
+        client.riffy.updateVoiceState(d);
+    });
+
+    // Configuração dos eventos do Riffy
+    client.riffy.on("nodeConnect", node => {
+        console.log(`Node "${node.name}" connected.`)
+    });
+
+    client.riffy.on("nodeError", (node, error) => {
+        console.log(`Node "${node.name}" encountered an error: ${error.message}.`)
+    });
+
+    client.riffy.on("trackStart", async (player, track) => {
+        // Implemente a lógica de trackStart aqui
+    });
+
+    client.riffy.on("queueEnd", async (player) => {
+        // Implemente a lógica de queueEnd aqui
     });
 
     client.commands = new Collection();
