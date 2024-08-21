@@ -2,16 +2,21 @@ const { ActivityType } = require("discord.js");
 const client = require("../../client");
 const { logger } = require("../../functions/logger");
 
-const activities = [
-    { name: "você", type: ActivityType.Watching },
-    { name: "música relaxante", type: ActivityType.Listening },
-    { name: "um jogo divertido", type: ActivityType.Playing },
-    { name: "dicas úteis", type: ActivityType.Streaming, url: "https://www.twitch.tv/kevinterrorista" }
-];
+async function setInteractivePresence() {
+    const totalUsers = client.guilds.cache.reduce((acc, guild) => acc + guild.memberCount, 0);
+    const totalGuilds = client.guilds.cache.size;
 
-const statuses = ["online", "idle", "dnd"];
+    const activities = [
+        { name: `Ajudando ${totalUsers} usuários`, type: ActivityType.Playing },
+        { name: `Configurando ${totalGuilds} servidores`, type: ActivityType.Watching },
+        { name: "você", type: ActivityType.Watching },
+        { name: "música relaxante", type: ActivityType.Listening },
+        { name: "um jogo divertido", type: ActivityType.Playing },
+        { name: "dicas úteis", type: ActivityType.Streaming, url: "https://www.twitch.tv/kevinterrorista" }
+    ];
 
-function setRandomPresence() {
+    const statuses = ["online", "idle", "dnd"];
+
     const activity = activities[Math.floor(Math.random() * activities.length)];
     const status = statuses[Math.floor(Math.random() * statuses.length)];
 
@@ -28,7 +33,7 @@ client.on("ready", async () => {
     logger(`${client.user.tag} está pronto!`, "success");
     console.log("---------------------");
 
-    setRandomPresence();
+    setInteractivePresence();
 
-    setInterval(setRandomPresence, 5 * 60 * 1000);
+    setInterval(setInteractivePresence, 5 * 60 * 1000);
 });
