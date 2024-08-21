@@ -1,5 +1,5 @@
 const { readdirSync } = require("fs");
-const { REST, Routes, Client, Collection } = require('discord.js');
+const { REST, Routes, Client, Collection, EmbedBuilder } = require('discord.js');
 const { client_id, client_token } = require("./configuration/index");
 const { logger } = require("./functions/logger");
 
@@ -19,6 +19,42 @@ const { logger } = require("./functions/logger");
     client.commands = new Collection();
     client.aliases = new Collection();
     client.slashCommands = new Collection();
+
+    client.bannedWords = ['palavrão1', 'palavrão2', 'spam'];
+    client.maxMentions = 5;
+
+    client.on('messageCreate', async (message) => {
+        if (message.author.bot) return;
+
+        const containsBannedWord = client.bannedWords.some(word => message.content.toLowerCase().includes(word));
+
+        const mentionCount = message.mentions.users.size + message.mentions.roles.size;
+
+        if (containsBannedWord || mentionCount > client.maxMentions) {
+            await message.delete();
+
+            const warningEmbed = new EmbedBuilder()
+                .setColor('#FF0000')
+                .setTitle('Aviso de AutoMod')
+                .setDescription(`Sua mensagem foi removida por violar as regras.`)
+                .addFields(
+                    { name: 'Motivo', value: containsBannedWord ? 'Uso de linguagem proibida' : 'Excesso de menções' },
+                    { name: 'Ação', value: 'Mensagem deletada' }
+                )
+                .setTimestamp();
+
+            try {
+                await message.author.send({ embeds: [warningEmbed] });
+            } catch (error) {
+                logger(`Não foi possível enviar DM para ${message.author.tag}`, "warn");
+            }
+
+            const modChannel = message.guild.channels.cache.find(channel => channel.name === 'mod-logs');
+            if (modChannel) {
+                modChannel.send({ embeds: [warningEmbed] });
+            }
+        }
+    });
 
     module.exports = client;
 

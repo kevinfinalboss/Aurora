@@ -1,6 +1,6 @@
-const config = require("./structures/configuration/index");
+const config = require("./bot/discord/structures/configuration/index");
 const { ShardingManager, ShardEvents } = require("discord.js");
-const { logger } = require("./structures/functions/logger")
+const { logger } = require("./bot/discord/structures/functions/logger")
 
 if (config.sharding) {
     const manager = new ShardingManager("./structures/client.js", { token: config.client_token, totalShards: "auto" });
@@ -20,9 +20,9 @@ if (config.sharding) {
 
     manager.spawn()
 } else {
-    require("./structures/client")
+    require("./bot/discord/structures/client")
 }
 
 if (config.database) {
-    require("./structures/database/connect").connect()
+    require("./bot/discord/structures/database/connect").connect()
 }
