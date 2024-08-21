@@ -1,7 +1,6 @@
 const { Client, CommandInteraction, ApplicationCommandOptionType, EmbedBuilder } = require("discord.js");
 const axios = require("axios");
 
-// Lista de fundos imobiliários suportados
 const SUPPORTED_FIIS = [
     { name: "KNRI11 - Kinea Renda Imobiliária", value: "KNRI11.SA" },
     { name: "HGLG11 - CSHG Logística", value: "HGLG11.SA" },
@@ -16,7 +15,7 @@ const SUPPORTED_FIIS = [
 ];
 
 module.exports = {
-    name: "fii",
+    name: "fundos",
     description: "Obter informações sobre um Fundo de Investimento Imobiliário (FII)",
     options: [
         {
@@ -42,6 +41,11 @@ module.exports = {
         try {
             const response = await axios.get(`https://query1.finance.yahoo.com/v8/finance/chart/${selectedFII}?interval=1d`);
             
+            const result = response.data.chart.result[0];
+            if (!result || !result.meta) {
+                throw new Error("Dados incompletos recebidos da API");
+            }
+
             const {
                 regularMarketPrice,
                 regularMarketChange,
@@ -50,22 +54,14 @@ module.exports = {
                 regularMarketDayLow,
                 regularMarketVolume,
                 regularMarketPreviousClose,
-            } = response.data.chart.result[0].meta;
+            } = result.meta;
 
             const fiiInfo = SUPPORTED_FIIS.find(f => f.value === selectedFII);
 
             const embed = new EmbedBuilder()
                 .setTitle(`📊 Informações: ${fiiInfo.name}`)
                 .setDescription(`Dados atualizados em: ${new Date().toLocaleString('pt-BR')}`)
-                .addFields(
-                    { name: "Preço Atual", value: `R$ ${regularMarketPrice.toFixed(2)}`, inline: true },
-                    { name: "Variação", value: `R$ ${regularMarketChange.toFixed(2)} (${regularMarketChangePercent.toFixed(2)}%)`, inline: true },
-                    { name: "Abertura", value: `R$ ${regularMarketPreviousClose.toFixed(2)}`, inline: true },
-                    { name: "Máxima do Dia", value: `R$ ${regularMarketDayHigh.toFixed(2)}`, inline: true },
-                    { name: "Mínima do Dia", value: `R$ ${regularMarketDayLow.toFixed(2)}`, inline: true },
-                    { name: "Volume", value: regularMarketVolume.toLocaleString('pt-BR'), inline: true },
-                )
-                .setColor(regularMarketChange >= 0 ? "#00FF00" : "#FF0000")
+                .setColor("#0099ff")
                 .setThumbnail("https://i.imgur.com/8dTMXLO.png")
                 .setTimestamp()
                 .setFooter({ 
@@ -73,14 +69,36 @@ module.exports = {
                     iconURL: "https://s.yimg.com/cv/apiv2/default/20180926/logo_finance_192px.png" 
                 });
 
+            const addFieldIfDefined = (name, value, inline = true) => {
+                if (value !== undefined && value !== null) {
+                    embed.addFields({ name, value: value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }), inline });
+                }
+            };
+
+            addFieldIfDefined("Preço Atual", regularMarketPrice);
+            
+            if (regularMarketChange !== undefined && regularMarketChangePercent !== undefined) {
+                const changeValue = `${regularMarketChange.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} (${regularMarketChangePercent.toFixed(2)}%)`;
+                embed.addFields({ name: "Variação", value: changeValue, inline: true });
+                embed.setColor(regularMarketChange >= 0 ? "#00FF00" : "#FF0000");
+            }
+
+            addFieldIfDefined("Abertura", regularMarketPreviousClose);
+            addFieldIfDefined("Máxima do Dia", regularMarketDayHigh);
+            addFieldIfDefined("Mínima do Dia", regularMarketDayLow);
+
+            if (regularMarketVolume !== undefined) {
+                embed.addFields({ name: "Volume", value: regularMarketVolume.toLocaleString('pt-BR'), inline: true });
+            }
+
             try {
                 const quoteResponse = await axios.get(`https://query1.finance.yahoo.com/v10/finance/quoteSummary/${selectedFII}?modules=summaryDetail,price`);
                 const { summaryDetail, price } = quoteResponse.data.quoteSummary.result[0];
 
-                if (summaryDetail.dividendYield) {
+                if (summaryDetail.dividendYield && summaryDetail.dividendYield.raw) {
                     embed.addFields({ name: "Dividend Yield", value: `${(summaryDetail.dividendYield.raw * 100).toFixed(2)}%`, inline: true });
                 }
-                if (summaryDetail.marketCap) {
+                if (summaryDetail.marketCap && summaryDetail.marketCap.raw) {
                     embed.addFields({ name: "Valor de Mercado", value: `R$ ${(summaryDetail.marketCap.raw / 1000000).toFixed(2)} M`, inline: true });
                 }
                 if (price.longName) {
@@ -93,7 +111,7 @@ module.exports = {
             await interaction.editReply({ embeds: [embed] });
         } catch (error) {
             console.error("Erro ao obter informações do FII:", error);
-            await interaction.editReply("Desculpe, ocorreu um erro ao obter as informações do FII. Por favor, tente novamente mais tarde.");
+            await interaction.editReply("Desculpe, ocorreu um erro ao obter as informações do FII. Os dados podem estar temporariamente indisponíveis. Por favor, tente novamente mais tarde.");
         }
     }
 };
