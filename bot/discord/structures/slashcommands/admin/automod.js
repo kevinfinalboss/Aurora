@@ -1,5 +1,6 @@
 const { Client, CommandInteraction, PermissionFlagsBits, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ComponentType } = require("discord.js");
 const guildRepository = require('../../database/repository/guildRepository');
+const { logger } = require('../../functions/logger');
 
 module.exports = {
     name: "automod",
@@ -8,6 +9,7 @@ module.exports = {
 
     run: async (client, interaction) => {
         if (!interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
+            logger(`Usuário ${interaction.user.tag} tentou usar o comando AutoMod sem permissão na guild ${interaction.guildId}`, 'warn');
             return interaction.reply({ content: "Você não tem permissão para usar este comando.", ephemeral: true });
         }
 
@@ -21,6 +23,7 @@ module.exports = {
                 { label: 'Listar palavras', value: 'list_words' },
                 { label: 'Definir limite de menções', value: 'set_mentions' },
                 { label: 'Definir canal de log', value: 'set_log_channel' },
+                { label: 'Ativar/Desativar filtro de imagens explícitas', value: 'toggle_explicit_filter' },
             ]);
 
         const row = new ActionRowBuilder().addComponents(selectMenu);
@@ -38,6 +41,7 @@ module.exports = {
 
         collector.on('collect', async (i) => {
             if (i.user.id !== interaction.user.id) {
+                logger(`Usuário ${i.user.tag} tentou usar o menu do AutoMod sem permissão na guild ${interaction.guildId}`, 'warn');
                 return i.reply({ content: 'Você não pode usar este menu.', ephemeral: true });
             }
 
@@ -60,6 +64,9 @@ module.exports = {
                 case 'set_log_channel':
                     await handleSetLogChannel(i);
                     break;
+                case 'toggle_explicit_filter':
+                    await handleToggleExplicitFilter(i);
+                    break;
             }
         });
 
@@ -70,9 +77,11 @@ module.exports = {
 };
 
 async function handleToggleAutomod(interaction) {
+    logger(`Alternando estado do AutoMod para a guild ${interaction.guildId}`, 'info');
     const guildSettings = await guildRepository.getGuildSettings(interaction.guildId);
     const newState = !guildSettings.automod.enabled;
     await guildRepository.updateAutomodSettings(interaction.guildId, { ...guildSettings.automod, enabled: newState });
+    logger(`AutoMod ${newState ? 'ativado' : 'desativado'} para a guild ${interaction.guildId}`, 'info');
     await interaction.reply({ content: `AutoMod foi ${newState ? 'ativado' : 'desativado'} para este servidor.`, ephemeral: true });
 }
 
@@ -84,7 +93,9 @@ async function handleAddWord(interaction) {
 
     collector.on('collect', async (m) => {
         const word = m.content.toLowerCase();
+        logger(`Adicionando palavra "${word}" à lista de palavras banidas da guild ${interaction.guildId}`, 'info');
         await guildRepository.addBannedWord(interaction.guildId, word);
+        logger(`Palavra "${word}" adicionada à lista de palavras banidas da guild ${interaction.guildId}`, 'info');
         await interaction.followUp({ content: `A palavra "${word}" foi adicionada à lista de palavras banidas.`, ephemeral: true });
     });
 }
@@ -92,6 +103,7 @@ async function handleAddWord(interaction) {
 async function handleRemoveWord(interaction) {
     const guildSettings = await guildRepository.getGuildSettings(interaction.guildId);
     if (!guildSettings.automod.bannedWords || guildSettings.automod.bannedWords.length === 0) {
+        logger(`Tentativa de remover palavra da lista vazia na guild ${interaction.guildId}`, 'warn');
         return interaction.reply({ content: 'Não há palavras na lista de palavras banidas.', ephemeral: true });
     }
 
@@ -119,7 +131,9 @@ async function handleRemoveWord(interaction) {
         }
 
         const wordToRemove = i.values[0];
+        logger(`Removendo palavra "${wordToRemove}" da lista de palavras banidas da guild ${interaction.guildId}`, 'info');
         await guildRepository.removeBannedWord(interaction.guildId, wordToRemove);
+        logger(`Palavra "${wordToRemove}" removida da lista de palavras banidas da guild ${interaction.guildId}`, 'info');
         await i.update({ content: `A palavra "${wordToRemove}" foi removida da lista de palavras banidas.`, components: [] });
     });
 }
@@ -127,6 +141,7 @@ async function handleRemoveWord(interaction) {
 async function handleListWords(interaction) {
     const guildSettings = await guildRepository.getGuildSettings(interaction.guildId);
     if (!guildSettings.automod.bannedWords || guildSettings.automod.bannedWords.length === 0) {
+        logger(`Lista de palavras banidas vazia na guild ${interaction.guildId}`, 'info');
         return interaction.reply({ content: 'Não há palavras na lista de palavras banidas.', ephemeral: true });
     }
 
@@ -136,6 +151,7 @@ async function handleListWords(interaction) {
         .setDescription(guildSettings.automod.bannedWords.join(', '))
         .setTimestamp();
 
+    logger(`Listando palavras banidas para a guild ${interaction.guildId}`, 'info');
     await interaction.reply({ embeds: [embed], ephemeral: true });
 }
 
@@ -147,7 +163,9 @@ async function handleSetMentions(interaction) {
 
     collector.on('collect', async (m) => {
         const limit = parseInt(m.content);
+        logger(`Definindo limite de menções para ${limit} na guild ${interaction.guildId}`, 'info');
         await guildRepository.setMaxMentions(interaction.guildId, limit);
+        logger(`Limite de menções definido para ${limit} na guild ${interaction.guildId}`, 'info');
         await interaction.followUp({ content: `O limite de menções foi definido para ${limit}.`, ephemeral: true });
     });
 }
@@ -160,7 +178,17 @@ async function handleSetLogChannel(interaction) {
 
     collector.on('collect', async (m) => {
         const channel = m.mentions.channels.first();
+        logger(`Definindo canal de log do AutoMod para ${channel.name} (${channel.id}) na guild ${interaction.guildId}`, 'info');
         await guildRepository.updateAutomodSettings(interaction.guildId, { logChannelId: channel.id });
+        logger(`Canal de log do AutoMod definido para ${channel.name} (${channel.id}) na guild ${interaction.guildId}`, 'info');
         await interaction.followUp({ content: `O canal de log do AutoMod foi definido para ${channel}.`, ephemeral: true });
     });
+}
+
+async function handleToggleExplicitFilter(interaction) {
+    logger(`Alternando filtro de imagens explícitas para a guild ${interaction.guildId}`, 'info');
+    const result = await guildRepository.toggleExplicitImageFilter(interaction.guildId);
+    const newState = result.automod.explicitImageFilter;
+    logger(`Filtro de imagens explícitas ${newState ? 'ativado' : 'desativado'} para a guild ${interaction.guildId}`, 'info');
+    await interaction.reply({ content: `O filtro de imagens explícitas foi ${newState ? 'ativado' : 'desativado'} para este servidor.`, ephemeral: true });
 }
