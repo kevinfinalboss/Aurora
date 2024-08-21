@@ -1,21 +1,21 @@
 const mongoose = require('mongoose');
-const config = require('../configuration/index');
 const { logger } = require('../functions/logger');
 
-const connect = async () => {
+const connect = async (mongodb_url) => {
     try {
         mongoose.set('strictQuery', true);
 
-        await mongoose.connect(config.mongodb_url, {
+        if (!mongodb_url) {
+            throw new Error("mongodb_url não foi fornecido ou está indefinido.");
+        }
+
+        await mongoose.connect(mongodb_url, {
             useNewUrlParser: true,
             useUnifiedTopology: true,
             connectTimeoutMS: 10000,
-            serverSelectionTimeoutMS: 5000,
-            autoReconnect: true,
-            reconnectTries: Number.MAX_VALUE,
-            reconnectInterval: 1000,
-        });
-
+            serverSelectionTimeoutMS: 5000
+        });        
+        
         mongoose.connection.once("open", () => {
             console.log("\n---------------------");
             logger("Database connection established successfully", "success");
