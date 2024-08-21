@@ -44,7 +44,6 @@ async function startBot() {
             try {
                 console.log("URL do MongoDB:", config.mongodb_url);
 
-                // Passa a URL do MongoDB como argumento para a função connect
                 await require("./bot/discord/structures/database/connect").connect(config.mongodb_url);
                 console.log("Conexão com o banco de dados estabelecida com sucesso.");
             } catch (error) {
