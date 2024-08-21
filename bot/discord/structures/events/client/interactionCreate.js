@@ -1,4 +1,4 @@
-const { PermissionsBitField, InteractionType } = require("discord.js");
+const { PermissionsBitField, InteractionType, EmbedBuilder } = require("discord.js");
 const { developers } = require("../../configuration/index");
 const { logger } = require("../../functions/logger");
 
@@ -79,6 +79,27 @@ module.exports = {
                     console.error('Erro ao processar autocomplete:', error);
                 }
                 logger("An error occurred while processing autocomplete:", "error");
+            }
+        } else if (interaction.isButton()) {
+            if (interaction.customId === 'view_commands') {
+                const commandsEmbed = new EmbedBuilder()
+                    .setColor('#4B0082')
+                    .setTitle('📜 Lista de Comandos')
+                    .setDescription('Aqui está uma lista dos principais comandos disponíveis:')
+                    .addFields(
+                        { name: '/config', value: 'Configure as opções do bot para o seu servidor' },
+                        { name: '/play', value: 'Reproduza uma música ou playlist' },
+                        { name: '/ban', value: 'Bane um usuário do servidor' },
+                        { name: '/kick', value: 'Expulsa um usuário do servidor' },
+                        { name: '/mute', value: 'Silencia um usuário temporariamente' },
+                        { name: '/warn', value: 'Dá um aviso a um usuário' },
+                        { name: '/stats', value: 'Mostra estatísticas do servidor' },
+                        { name: '/help', value: 'Exibe a lista completa de comandos e suas descrições' }
+                    )
+                    .setTimestamp()
+                    .setFooter({ text: 'Use /help para mais detalhes sobre cada comando', iconURL: client.user.displayAvatarURL() });
+
+                await interaction.reply({ embeds: [commandsEmbed], ephemeral: true });
             }
         }
     }

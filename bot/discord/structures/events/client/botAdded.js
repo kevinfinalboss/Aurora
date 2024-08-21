@@ -7,7 +7,7 @@ module.exports = {
     execute: async (client, guild) => {
         try {
             const owner = await guild.fetchOwner();
-            await sendWelcomeEmbed(owner.user);
+            await sendWelcomeEmbed(client, owner.user);
             logger(`Bot adicionado ao servidor: ${guild.name} (ID: ${guild.id})`, 'info');
         } catch (error) {
             logger(`Erro ao processar adição do bot ao servidor ${guild.name}: ${error.message}`, 'error');
@@ -15,7 +15,7 @@ module.exports = {
     }
 };
 
-async function sendWelcomeEmbed(user) {
+async function sendWelcomeEmbed(client, user) {
     const embed = new EmbedBuilder()
         .setColor('#4B0082')
         .setTitle('🎉 Obrigado por adicionar o AssistantBot!')
@@ -56,28 +56,3 @@ async function sendWelcomeEmbed(user) {
         logger(`Não foi possível enviar DM para ${user.tag}: ${error.message}`, 'warn');
     }
 }
-
-client.on('interactionCreate', async interaction => {
-    if (!interaction.isButton()) return;
-
-    if (interaction.customId === 'view_commands') {
-        const commandsEmbed = new EmbedBuilder()
-            .setColor('#4B0082')
-            .setTitle('📜 Lista de Comandos')
-            .setDescription('Aqui está uma lista dos principais comandos disponíveis:')
-            .addFields(
-                { name: '/config', value: 'Configure as opções do bot para o seu servidor' },
-                { name: '/play', value: 'Reproduza uma música ou playlist' },
-                { name: '/ban', value: 'Bane um usuário do servidor' },
-                { name: '/kick', value: 'Expulsa um usuário do servidor' },
-                { name: '/mute', value: 'Silencia um usuário temporariamente' },
-                { name: '/warn', value: 'Dá um aviso a um usuário' },
-                { name: '/stats', value: 'Mostra estatísticas do servidor' },
-                { name: '/help', value: 'Exibe a lista completa de comandos e suas descrições' }
-            )
-            .setTimestamp()
-            .setFooter({ text: 'Use /help para mais detalhes sobre cada comando', iconURL: client.user.displayAvatarURL() });
-
-        await interaction.reply({ embeds: [commandsEmbed], ephemeral: true });
-    }
-});
