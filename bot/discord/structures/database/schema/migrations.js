@@ -33,6 +33,7 @@ const automodSchema = new mongoose.Schema({
     bannedWords: { type: [String], default: [] },
     maxMentions: { type: Number, default: 5 },
     logChannelId: { type: String, default: null },
+    explicitImageFilter: { type: Boolean, default: false },
 }, { _id: false });
 
 const guildSchema = new mongoose.Schema({
