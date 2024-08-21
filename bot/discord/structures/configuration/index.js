@@ -1,13 +1,34 @@
-require('dotenv').config();
+const { getConfigValues } = require("../aws/parameter-store/retrieve-stores");
 
-module.exports = {
-    client_token: process.env.CLIENT_TOKEN,
-    client_id: process.env.CLIENT_ID,
-    client_prefix: process.env.CLIENT_PREFIX,
-    mongodb_url: process.env.MONGODB_URL,
-    developers: process.env.DEVELOPERS ? process.env.DEVELOPERS.split(',') : [],
-    sharding: process.env.SHARDING === 'true',
-    database: process.env.DATABASE === 'true',
-    brapi_token: process.env.BRAPI_TOKEN,
-    lolEsportsApiKey: process.env.LOL_ESPORTS_API_KEY,
+async function loadConfig() {
+    try {
+        const awsConfig = await getConfigValues();
+
+        const config = {
+            client_token: awsConfig.client_token,
+            client_id: awsConfig.client_id,
+            client_prefix: 'gomes!',
+            mongodb_url: awsConfig.mongodb_url,
+            developers: ['906552238619639878'],
+            sharding: false,
+            database: false,
+            brapi_token: awsConfig.brapi_token,
+            lolEsportsApiKey: awsConfig.lolEsportsApiKey,
+        };
+
+
+        if (!config.client_id) {
+            console.error("AVISO: client_id não encontrado na configuração!");
+        }
+        if (!config.client_token) {
+            console.error("AVISO: client_token não encontrado na configuração!");
+        }
+
+        return config;
+    } catch (error) {
+        console.error("Erro ao carregar as configurações do AWS Parameter Store:", error);
+        throw error;
+    }
 }
+
+module.exports = { loadConfig };
