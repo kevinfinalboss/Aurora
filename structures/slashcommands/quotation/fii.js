@@ -41,7 +41,6 @@ module.exports = {
             const fiiData = response.data.results[0];
             const fiiInfo = SUPPORTED_FIIS.find(f => f.value === selectedFII);
 
-            // Formatação robusta da data
             let formattedDate = "Data não disponível";
             if (fiiData.updatedAt) {
                 const updatedDate = new Date(fiiData.updatedAt);
