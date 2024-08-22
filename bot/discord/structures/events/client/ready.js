@@ -7,8 +7,6 @@ function setInteractivePresence(client) {
     const totalGuilds = client.guilds.cache.size;
 
     const activities = [
-        { name: `👥 Ajudando ${totalUsers} usuários com moderação`, type: ActivityType.Playing },
-        { name: `🔧 Configurando ${totalGuilds} servidores`, type: ActivityType.Watching },
         { name: "🎵 Tocando músicas de alta qualidade", type: ActivityType.Listening },
         { name: "💼 Acompanhando cotações financeiras", type: ActivityType.Watching },
         { name: "📈 Monitorando a inflação global", type: ActivityType.Watching },
