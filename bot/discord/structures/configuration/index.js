@@ -4,8 +4,6 @@ async function loadConfig() {
     try {
         const awsConfig = await getConfigValues();
 
-        console.log("Valor de mongodb_url recebido:", awsConfig.mongodb_url);
-
         const config = {    
             client_token: awsConfig.client_token,
             client_id: awsConfig.client_id,
