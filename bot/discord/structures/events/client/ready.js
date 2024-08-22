@@ -1,5 +1,6 @@
-const { ActivityType } = require("discord.js");
+const { ActivityType, Events } = require("discord.js");
 const { logger } = require("../../functions/logger");
+const Guild = require('../../database/schema/migrations');
 
 function setInteractivePresence(client) {
     const totalUsers = client.guilds.cache.reduce((acc, guild) => acc + guild.memberCount, 0);
