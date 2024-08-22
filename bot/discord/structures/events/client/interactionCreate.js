@@ -146,7 +146,7 @@ async function handleButtonInteraction(client, interaction) {
                 .addFields(
                     { name: '/config', value: 'Configure as opções do bot para o seu servidor' },
                     { name: '/play', value: 'Reproduza uma música ou playlist' },
-                    { name: '/ban', value: 'Bane um usuário do servidor' },
+                    { name: '/clear', value: 'Bane um usuário do servidor' },
                     { name: '/kick', value: 'Expulsa um usuário do servidor' },
                     { name: '/mute', value: 'Silencia um usuário temporariamente' },
                     { name: '/warn', value: 'Dá um aviso a um usuário' },
