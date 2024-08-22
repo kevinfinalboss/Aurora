@@ -146,8 +146,7 @@ function checkInactivity(player, interaction) {
             .setColor('#FF0000')
             .setAuthor({
                 name: 'Inatividade Detectada',
-                iconURL: client.user.displayAvatarURL(),
-                url: 'https://discord.gg/xQF9f9yUEM'
+                iconURL: client.user.displayAvatarURL()
             })
             .setDescription('Saí do canal de voz devido à inatividade.')
             .setThumbnail(client.user.displayAvatarURL())
