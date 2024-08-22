@@ -25,10 +25,11 @@ async function sendWelcomeEmbed(client, user) {
             { name: '🛡️ Moderação', value: 'Mantenha seu servidor seguro com comandos de moderação avançados e um sistema de AutoMod customizável.' },
             { name: '🎊 Boas-vindas e Despedidas', value: 'Crie mensagens personalizadas para novos membros e para aqueles que saem do servidor.' },
             { name: '🎵 Música', value: 'Reproduza suas músicas favoritas com alta qualidade e sem anúncios.' },
-            { name: '📊 Finanças', value: 'Acompanhe cotação de moedas estrangeiras e criptomoedas e veja inflação de vários países.' },
-            { name: '⚙️ Configuração', value: 'Use `/config` para personalizar o bot de acordo com as necessidades do seu servidor.' }
+            { name: '📊 Finanças', value: 'Acompanhe cotações de ações, moedas estrangeiras, criptomoedas e veja a inflação de vários países.' },
+            { name: '⚙️ Configuração', value: 'Use `/config` para personalizar o bot de acordo com as necessidades do seu servidor.' },
+            { name: '📜 Comandos Diversos', value: 'Consulte informações de CEP, calcule seu IMC, ou gere QR codes personalizados.' }
         )
-        .setImage('https://i.imgur.com/XfYCdiY.png')
+        .setImage(client.user.bannerURL({ dynamic: true, size: 1024 }))
         .setTimestamp()
         .setFooter({ text: 'AuroraBOT - Seu companheiro multifuncional', iconURL: client.user.displayAvatarURL() });
 

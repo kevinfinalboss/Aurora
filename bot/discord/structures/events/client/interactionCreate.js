@@ -159,12 +159,19 @@ async function handleButtonInteraction(client, interaction) {
                 .addFields(
                     { name: '/config', value: 'Configure as opções do bot para o seu servidor' },
                     { name: '/play', value: 'Reproduza uma música ou playlist' },
-                    { name: '/clear', value: 'Bane um usuário do servidor' },
-                    { name: '/kick', value: 'Expulsa um usuário do servidor' },
-                    { name: '/mute', value: 'Silencia um usuário temporariamente' },
-                    { name: '/warn', value: 'Dá um aviso a um usuário' },
-                    { name: '/stats', value: 'Mostra estatísticas do servidor' },
-                    { name: '/help', value: 'Exibe a lista completa de comandos e suas descrições' }
+                    { name: '/clear', value: 'Limpa mensagens do chat' },
+                    { name: '/help', value: 'Exibe a lista completa de comandos e suas descrições' },
+                    { name: '/vlrteams', value: 'Obter informações sobre times de Valorant' },
+                    { name: '/vlrteaminfo', value: 'Obter informações detalhadas sobre um time de Valorant' },
+                    { name: '/avatar', value: 'Exibe o avatar de um usuário' },
+                    { name: '/acao', value: 'Obter informações sobre uma ação' },
+                    { name: '/price', value: 'Obter a cotação atual de uma moeda em relação ao Real (BRL)' },
+                    { name: '/crypto', value: 'Obter a cotação atual de uma criptomoeda em relação ao Real (BRL) e Dólar (USD)' },
+                    { name: '/fii', value: 'Obter informações sobre um Fundo de Investimento Imobiliário (FII)' },
+                    { name: '/inflacao', value: 'Obter informações sobre a inflação de um país' },
+                    { name: '/cep', value: 'Busca informações de um CEP' },
+                    { name: '/imc', value: 'Calcular o Índice de Massa Corporal (IMC)' },
+                    { name: '/qrcode', value: 'Gera um QR code para um link fornecido' }
                 )
                 .setTimestamp()
                 .setFooter({ text: 'Use /help para mais detalhes sobre cada comando', iconURL: client.user.displayAvatarURL() });
