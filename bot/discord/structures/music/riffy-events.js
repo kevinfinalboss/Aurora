@@ -2,38 +2,42 @@ const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('
 
 function setupRiffyEvents(client) {
     client.riffy.on("nodeConnect", node => {
-        console.log(`Node "${node.name}" connected.`)
+        console.log(`Node "${node.name}" conectado.`)
     });
 
     client.riffy.on("nodeError", (node, error) => {
-        console.log(`Node "${node.name}" encountered an error: ${error.message}.`)
+        console.log(`Node "${node.name}" encontrou um erro: ${error.message}.`)
     });
 
     client.riffy.on("trackStart", async (player, track) => {
         const channel = client.channels.cache.get(player.textChannel);
         if (!channel) return;
 
-        // Delete previous now playing message if it exists
         if (player.nowPlayingMessage) {
             await player.nowPlayingMessage.delete().catch(console.error);
         }
 
         const requester = track.info.requester;
-        const details = `**Title:** ${track.info.title}\n` +
-        `**Author:** ${track.info.author}\n` +
-        `**Duration:** ${formatDuration(track.info.length)}\n` +
-        `**Requested by:** ${requester.username}`;
+        const details = `**Título:** ${track.info.title}\n` +
+        `**Artista:** ${track.info.author}\n` +
+        `**Duração:** ${formatDuration(track.info.length)}\n` +
+        `**Solicitado por:** ${requester.username}`;
 
         const musicEmbed = new EmbedBuilder()
             .setColor("#FF7A00")
             .setAuthor({
-                name: 'Currently playing',
+                name: 'Tocando agora',
                 iconURL: 'https://cdn.discordapp.com/attachments/1140841446228897932/1144671132948103208/giphy.gif', 
                 url: 'https://discord.gg/xQF9f9yUEM'
             })
             .setDescription(details)
-            .setImage(track.info.thumbnail)
-            .setFooter({ text: `Requested by ${requester.username}`, iconURL: requester.displayAvatarURL() });
+            .setThumbnail(track.info.thumbnail)
+            .addFields(
+                { name: 'Posição na fila', value: '1', inline: true },
+                { name: 'Músicas restantes', value: player.queue.size.toString(), inline: true },
+                { name: 'Volume', value: `${player.volume}%`, inline: true }
+            )
+            .setFooter({ text: `Solicitado por ${requester.username}`, iconURL: requester.displayAvatarURL() });
 
         const row = createMusicControlButtons();
 
@@ -49,17 +53,36 @@ function setupRiffyEvents(client) {
         const embed = new EmbedBuilder()
             .setColor('#ffff00')
             .setAuthor({
-                name: 'Queue Ended!',
+                name: 'Fila Encerrada!',
                 iconURL: 'https://cdn.discordapp.com/attachments/1230824451990622299/1230824519220985896/6280-2.gif?ex=6641e8a8&is=66409728&hm=149efc9db2a92eb90c70f0a6fb15618a5b912b528f6b1dcf1b517c77a72a733a&',
                 url: 'https://discord.gg/xQF9f9yUEM'
             })
-            .setDescription('**Bye Bye!, No more songs to play...**');
+            .setDescription('**Tchau Tchau! Não há mais músicas para tocar...**')
+            .addFields(
+                { name: 'Total de músicas tocadas', value: player.playedTracks.length.toString() },
+                { name: 'Duração total da sessão', value: formatDuration(player.playedTime) }
+            )
+            .setTimestamp();
         
         if (player.nowPlayingMessage) {
             await player.nowPlayingMessage.delete().catch(console.error);
         }
         
         await channel.send({ embeds: [embed] });
+    });
+
+    client.riffy.on("trackError", (player, track, error) => {
+        console.error(`Erro ao reproduzir a faixa ${track.title}:`, error);
+        const channel = client.channels.cache.get(player.textChannel);
+        if (channel) {
+            const errorEmbed = new EmbedBuilder()
+                .setColor('#FF0000')
+                .setTitle('Erro na Reprodução')
+                .setDescription(`Ocorreu um erro ao tentar reproduzir **${track.title}**. Pulando para a próxima faixa.`)
+                .setTimestamp();
+            channel.send({ embeds: [errorEmbed] });
+        }
+        player.stop(); // Pula para a próxima faixa
     });
 }
 
@@ -76,19 +99,19 @@ function createMusicControlButtons() {
         .addComponents(
             new ButtonBuilder()
                 .setCustomId('pause_resume')
-                .setLabel('Pause/Resume')
+                .setLabel('Pausar/Retomar')
                 .setStyle(ButtonStyle.Primary),
             new ButtonBuilder()
                 .setCustomId('skip')
-                .setLabel('Skip')
+                .setLabel('Pular')
                 .setStyle(ButtonStyle.Secondary),
             new ButtonBuilder()
                 .setCustomId('stop')
-                .setLabel('Stop')
+                .setLabel('Parar')
                 .setStyle(ButtonStyle.Danger),
             new ButtonBuilder()
                 .setCustomId('queue')
-                .setLabel('View Queue')
+                .setLabel('Ver Fila')
                 .setStyle(ButtonStyle.Success)
         );
 }
@@ -106,6 +129,11 @@ function checkInactivity(player, channel) {
             })
             .setDescription('Saí do canal de voz devido à inatividade.')
             .setThumbnail(channel.client.user.displayAvatarURL())
+            .addFields(
+                { name: 'Tempo de inatividade', value: '1 minuto' },
+                { name: 'Total de músicas tocadas', value: player.playedTracks.length.toString() },
+                { name: 'Duração total da sessão', value: formatDuration(player.playedTime) }
+            )
             .setFooter({ text: 'Música Encerrada', iconURL: channel.client.user.displayAvatarURL() })
             .setTimestamp();
 
