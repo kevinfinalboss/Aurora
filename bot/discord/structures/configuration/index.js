@@ -14,7 +14,11 @@ async function loadConfig() {
             database: true,
             brapi_token: awsConfig.brapi_token,
             lolEsportsApiKey: awsConfig.lolEsportsApiKey,
+            groq_api_key: awsConfig.groq_api_key,
+            lavalink_url: awsConfig.lavalink_url,
+            lavalink_password: awsConfig.lavalink_password
         };
+        
 
 
         if (!config.client_id) {

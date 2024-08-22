@@ -1,13 +1,15 @@
 const { Riffy } = require("riffy");
+const config = require("../configuration/index");
 
 const nodes = [
     {
-        host: "37.114.42.191",
-        port: 9906, 
-        password: "danteisnttaken", 
+        host: config.lavalink_url,
+        port: 80,
+        password: config.lavalink_password,
         secure: false
     },
 ];
+
 
 function setupRiffy(client) {
     client.riffy = new Riffy(client, nodes, {

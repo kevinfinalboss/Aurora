@@ -1,9 +1,9 @@
 const { CommandInteraction, ApplicationCommandOptionType, EmbedBuilder } = require("discord.js");
+const config = require("../../configuration/index")
 const Groq = require("groq-sdk");
-const dotenv = require('dotenv');
 
-dotenv.config();
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+const groq = new Groq({ apiKey: config.groq_api_key });
+
 
 module.exports = {
     name: "ai",

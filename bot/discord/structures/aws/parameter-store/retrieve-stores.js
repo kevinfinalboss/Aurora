@@ -16,7 +16,10 @@ async function getConfigValues() {
         client_id: "/keys/bot/aurora/discord/clientid/token",
         mongodb_url: "/keys/bot/aurora/mongodb/connect",
         brapi_token: "/keys/bot/aurora/discord/brapi/apikey",
-        lolEsportsApiKey: "/keys/bot/aurora/discord/lolesports/apikey"
+        lolEsportsApiKey: "/keys/bot/aurora/discord/lolesports/apikey",
+        groq_api_key: "/keys/bot/aurora/discord/groq/apikey", 
+        lavalink_url: "/keys/bot/aurora/lavalink/url",
+        lavalink_password: "/keys/bot/aurora/lavalink/password"
     };
 
     const config = {};
