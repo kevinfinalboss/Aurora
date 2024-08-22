@@ -2,6 +2,9 @@ const initializeClient = require("./bot/discord/structures/client");
 const { ShardingManager } = require("discord.js");
 const { loadConfig } = require("./bot/discord/structures/configuration/index");
 const { logger } = require("./bot/discord/structures/functions/logger");
+const mongoose = require("mongoose");
+
+let client, manager;
 
 async function startBot() {
     try {
@@ -18,7 +21,7 @@ async function startBot() {
         }
 
         if (config.sharding) {
-            const manager = new ShardingManager("./bot/discord/structures/client.js", {
+            manager = new ShardingManager("./bot/discord/structures/client.js", {
                 token: config.client_token,
                 totalShards: "auto"
             });
@@ -27,11 +30,11 @@ async function startBot() {
                 logger(`Launched shard ${shard.id}`, "info");
             });
 
-            manager.spawn();
+            await manager.spawn();
         } else {
             console.log("Iniciando o bot sem sharding...");
             try {
-                const client = await initializeClient();
+                client = await initializeClient();
                 console.log("Bot iniciado com sucesso.");
             } catch (error) {
                 console.error("Erro ao iniciar o bot:", error);
@@ -42,7 +45,6 @@ async function startBot() {
         if (config.database) {
             console.log("Conectando ao banco de dados...");
             try {
-
                 await require("./bot/discord/structures/database/connect").connect(config.mongodb_url);
                 console.log("Conexão com o banco de dados estabelecida com sucesso.");
             } catch (error) {
@@ -58,5 +60,22 @@ async function startBot() {
         process.exit(1);
     }
 }
+
+function gracefulShutdown() {
+    console.log("Encerrando o bot de forma graciosa...");
+    if (client) {
+        client.destroy();
+    }
+    if (manager) {
+        manager.shards.forEach(shard => shard.kill());
+    }
+    mongoose.connection.close(false, () => {
+        console.log("Conexão com o banco de dados fechada.");
+        process.exit(0);
+    });
+}
+
+process.on("SIGINT", gracefulShutdown);
+process.on("SIGTERM", gracefulShutdown);
 
 startBot();
