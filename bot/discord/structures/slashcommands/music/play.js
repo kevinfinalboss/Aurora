@@ -43,12 +43,20 @@ module.exports = {
         if (!voiceChannel) {
             const noVoiceEmbed = new EmbedBuilder()
                 .setColor('#FF0000')
-                .setDescription('Você precisa estar em um canal de voz para usar este comando!');
+                .setDescription('Você precisa estar em um canal de voz para usar este comando!')
+                .setFooter({ text: 'Erro', iconURL: interaction.client.user.displayAvatarURL() });
             return interaction.editReply({ embeds: [noVoiceEmbed], ephemeral: true });
         }
 
         try {
-            const resolve = await client.riffy.resolve({ query: query, requester: interaction.user });
+            let searchQuery = query;
+            if (query.length === 11 && /^[a-zA-Z0-9_-]{11}$/.test(query)) {
+                searchQuery = `https://www.youtube.com/watch?v=${query}`;
+            } else if (!query.startsWith('http') && !query.includes('youtube.com') && !query.includes('youtu.be')) {
+                searchQuery = `ytsearch:${query}`;
+            }
+
+            const resolve = await client.riffy.resolve({ query: searchQuery, requester: interaction.user });
             const { loadType, tracks, playlistInfo } = resolve;
 
             if (loadType === 'empty' || !tracks || tracks.length === 0) {
@@ -78,6 +86,11 @@ module.exports = {
                     .setColor('#14bdff')
                     .setTitle('Playlist Adicionada à Fila')
                     .setDescription(`**Nome da Playlist:** ${playlistInfo.name}\n**Número de Faixas:** ${tracks.length}`)
+                    .setThumbnail(tracks[0].info.thumbnail)
+                    .addFields(
+                        { name: 'Duração Total', value: formatDuration(tracks.reduce((acc, track) => acc + track.info.length, 0)), inline: true },
+                        { name: 'Adicionado por', value: interaction.user.username, inline: true }
+                    )
                     .setFooter({ text: `Solicitado por ${interaction.user.username}`, iconURL: interaction.user.displayAvatarURL() });
             } else if (loadType === 'search' || loadType === 'track') {
                 const track = tracks[0];
@@ -91,12 +104,12 @@ module.exports = {
                     .setThumbnail(track.info.thumbnail)
                     .addFields(
                         { name: 'Duração', value: formatDuration(track.info.length), inline: true },
-                        { name: 'Artista', value: track.info.author, inline: true }
+                        { name: 'Artista', value: track.info.author, inline: true },
+                        { name: 'Posição na fila', value: player.queue.size.toString(), inline: true }
                     )
                     .setFooter({ text: `Solicitado por ${interaction.user.username}`, iconURL: interaction.user.displayAvatarURL() });
             }
 
-            // Delete previous now playing message if it exists
             if (player.nowPlayingMessage) {
                 await player.nowPlayingMessage.delete().catch(console.error);
             }
