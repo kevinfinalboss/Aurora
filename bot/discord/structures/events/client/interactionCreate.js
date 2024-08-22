@@ -191,13 +191,16 @@ async function showQueue(player, interaction) {
         queueString += "Não há mais músicas na fila.";
     }
 
+    const totalDuration = queue.reduce((acc, track) => acc + track.info.length, 0);
+    const queueDuration = currentTrack ? totalDuration + currentTrack.info.length : totalDuration;
+
     const queueEmbed = new EmbedBuilder()
         .setColor('#14bdff')
         .setTitle('Fila de Reprodução')
         .setDescription(queueString)
         .addFields(
-            { name: 'Total de músicas', value: queue.size.toString(), inline: true },
-            { name: 'Duração Total', value: formatDuration(tracks.reduce((acc, track) => acc + track.info.length, 0)), inline: true },
+            { name: 'Total de músicas', value: (queue.size + (currentTrack ? 1 : 0)).toString(), inline: true },
+            { name: 'Duração Total', value: formatDuration(queueDuration), inline: true },
         )
         .setFooter({ text: `Solicitado por ${interaction.user.username}`, iconURL: interaction.user.displayAvatarURL() });
 
