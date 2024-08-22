@@ -108,7 +108,19 @@ function checkInactivity(player, channel) {
     const voiceChannel = channel.guild.channels.cache.get(player.voiceChannel);
     if (voiceChannel && voiceChannel.members.size === 1) {
         player.destroy();
-        channel.send('Saí do canal de voz devido à inatividade.');
+        const embed = new EmbedBuilder()
+            .setColor('#FF0000')
+            .setAuthor({
+                name: 'Inatividade Detectada',
+                iconURL: channel.client.user.displayAvatarURL(),
+                url: 'https://discord.gg/xQF9f9yUEM'
+            })
+            .setDescription('Saí do canal de voz devido à inatividade.')
+            .setThumbnail(channel.client.user.displayAvatarURL())
+            .setFooter({ text: 'Música Encerrada', iconURL: channel.client.user.displayAvatarURL() })
+            .setTimestamp();
+
+        channel.send({ embeds: [embed] });
     } else {
         player.inactivityTimeout = setTimeout(() => checkInactivity(player, channel), 60000);
     }
