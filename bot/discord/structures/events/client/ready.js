@@ -1,18 +1,21 @@
-const { ActivityType, Events } = require("discord.js");
+const { ActivityType } = require("discord.js");
 const { logger } = require("../../functions/logger");
-const Guild = require('../../database/schema/migrations');
 
 function setInteractivePresence(client) {
     const totalUsers = client.guilds.cache.reduce((acc, guild) => acc + guild.memberCount, 0);
     const totalGuilds = client.guilds.cache.size;
 
     const activities = [
-        { name: `Ajudando ${totalUsers} usuários`, type: ActivityType.Playing },
-        { name: `Configurando ${totalGuilds} servidores`, type: ActivityType.Watching },
-        { name: "você", type: ActivityType.Watching },
-        { name: "música relaxante", type: ActivityType.Listening },
-        { name: "um jogo divertido", type: ActivityType.Playing },
-        { name: "dicas úteis", type: ActivityType.Streaming, url: "https://www.twitch.tv/kevinterrorista" }
+        { name: `👥 Ajudando ${totalUsers} usuários com moderação`, type: ActivityType.Playing },
+        { name: `🔧 Configurando ${totalGuilds} servidores`, type: ActivityType.Watching },
+        { name: "🎵 Tocando músicas de alta qualidade", type: ActivityType.Listening },
+        { name: "💼 Acompanhando cotações financeiras", type: ActivityType.Watching },
+        { name: "📈 Monitorando a inflação global", type: ActivityType.Watching },
+        { name: "👥 Dando boas-vindas aos novos membros", type: ActivityType.Watching },
+        { name: "🛠️ Personalizando o servidor", type: ActivityType.Playing },
+        { name: "🎮 Jogando com novos comandos", type: ActivityType.Playing },
+        { name: "🌐 Ajudando em ${totalGuilds} servidores", type: ActivityType.Watching },
+        { name: "📜 Use /help para ver os comandos", type: ActivityType.Playing }
     ];
 
     const statuses = ["online", "idle", "dnd"];
