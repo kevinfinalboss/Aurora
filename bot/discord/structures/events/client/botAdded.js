@@ -18,20 +18,19 @@ module.exports = {
 async function sendWelcomeEmbed(client, user) {
     const embed = new EmbedBuilder()
         .setColor('#4B0082')
-        .setTitle('🎉 Obrigado por adicionar o AssistantBot!')
+        .setTitle('🎉 Obrigado por adicionar a AuroraBOT!')
         .setDescription('Estou aqui para tornar seu servidor mais incrível! Veja abaixo um resumo das minhas principais funcionalidades.')
         .setThumbnail(client.user.displayAvatarURL({ dynamic: true, size: 256 }))
         .addFields(
             { name: '🛡️ Moderação', value: 'Mantenha seu servidor seguro com comandos de moderação avançados e um sistema de AutoMod customizável.' },
             { name: '🎊 Boas-vindas e Despedidas', value: 'Crie mensagens personalizadas para novos membros e para aqueles que saem do servidor.' },
             { name: '🎵 Música', value: 'Reproduza suas músicas favoritas com alta qualidade e sem anúncios.' },
-            { name: '🎰 Minijogos', value: 'Divirta-se com uma variedade de minijogos interativos.' },
-            { name: '📊 Estatísticas', value: 'Acompanhe o crescimento do seu servidor com gráficos e relatórios detalhados.' },
+            { name: '📊 Finanças', value: 'Acompanhe cotação de moedas estrangeiras e criptomoedas e veja inflação de vários países.' },
             { name: '⚙️ Configuração', value: 'Use `/config` para personalizar o bot de acordo com as necessidades do seu servidor.' }
         )
         .setImage('https://i.imgur.com/XfYCdiY.png')
         .setTimestamp()
-        .setFooter({ text: 'AssistantBot - Seu companheiro multifuncional', iconURL: client.user.displayAvatarURL() });
+        .setFooter({ text: 'AuroraBOT - Seu companheiro multifuncional', iconURL: client.user.displayAvatarURL() });
 
     const row = new ActionRowBuilder()
         .addComponents(
