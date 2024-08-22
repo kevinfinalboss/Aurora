@@ -40,15 +40,19 @@ module.exports = {
         }
 
         try {
+            const resolve = await client.riffy.resolve({ query: query, requester: interaction.user });
+            const { loadType, tracks, playlistInfo } = resolve;
+
+            if (loadType === 'empty') {
+                return interaction.editReply('Não foram encontrados resultados para esta busca.');
+            }
+
             const player = client.riffy.createConnection({
                 guildId: interaction.guild.id,
                 voiceChannel: voiceChannel.id,
                 textChannel: interaction.channel.id,
                 deaf: true 
             });
-
-            const resolve = await client.riffy.resolve({ query: query, requester: interaction.user });
-            const { loadType, tracks, playlistInfo } = resolve;
 
             let embed;
             if (loadType === 'playlist') {
@@ -84,8 +88,6 @@ module.exports = {
                         { name: 'Artista', value: track.info.author, inline: true }
                     )
                     .setFooter({ text: `Solicitado por ${interaction.user.username}`, iconURL: interaction.user.displayAvatarURL() });
-            } else {
-                return interaction.editReply('Não foram encontrados resultados para esta busca.');
             }
 
             const row = createMusicControlButtons();
@@ -140,8 +142,20 @@ function checkInactivity(player, interaction) {
     const voiceChannel = interaction.guild.channels.cache.get(player.voiceChannel);
     if (voiceChannel && voiceChannel.members.size === 1) {
         player.destroy();
-        interaction.channel.send('Saí do canal de voz devido à inatividade.');
+        const embed = new EmbedBuilder()
+            .setColor('#FF0000')
+            .setAuthor({
+                name: 'Inatividade Detectada',
+                iconURL: client.user.displayAvatarURL(),
+                url: 'https://discord.gg/xQF9f9yUEM'
+            })
+            .setDescription('Saí do canal de voz devido à inatividade.')
+            .setThumbnail(client.user.displayAvatarURL())
+            .setFooter({ text: 'Música Encerrada', iconURL: client.user.displayAvatarURL() })
+            .setTimestamp();
+
+        interaction.channel.send({ embeds: [embed] });
     } else {
-        player.inactivityTimeout = setTimeout(() => checkInactivity(player, interaction), 60000);
+        player.inactivityTimeout = setTimeout(() => checkInactivity(player, interaction), 15000);
     }
 }
