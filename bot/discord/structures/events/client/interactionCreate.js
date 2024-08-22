@@ -100,18 +100,31 @@ async function handleButtonInteraction(client, interaction) {
         return interaction.reply({ content: "Não há player ativo neste servidor.", ephemeral: true });
     }
 
+    const embed = new EmbedBuilder()
+        .setColor('#14bdff')
+        .setAuthor({
+            name: 'Controle de Música',
+            iconURL: client.user.displayAvatarURL(),
+            url: 'https://discord.gg/xQF9f9yUEM'
+        })
+        .setFooter({ text: `Solicitado por ${interaction.user.username}`, iconURL: interaction.user.displayAvatarURL() })
+        .setTimestamp();
+
     switch (customId) {
         case 'pause_resume':
             player.pause(!player.paused);
-            await interaction.reply({ content: player.paused ? "Música pausada." : "Música resumida.", ephemeral: true });
+            embed.setDescription(`Música ${player.paused ? "pausada" : "resumida"} por ${interaction.user}.`);
+            await interaction.reply({ embeds: [embed] });
             break;
         case 'skip':
             player.stop();
-            await interaction.reply({ content: "Música pulada.", ephemeral: true });
+            embed.setDescription(`Música pulada por ${interaction.user}.`);
+            await interaction.reply({ embeds: [embed] });
             break;
         case 'stop':
             player.destroy();
-            await interaction.reply({ content: "Player parado e fila limpa.", ephemeral: true });
+            embed.setDescription(`Player parado e fila limpa por ${interaction.user}.`);
+            await interaction.reply({ embeds: [embed] });
             break;
         case 'queue':
             const queue = player.queue;
@@ -119,12 +132,12 @@ async function handleButtonInteraction(client, interaction) {
             let queueString = "";
 
             if (currentTrack) {
-                queueString += `**Now Playing:** ${currentTrack.info.title}\n\n`;
+                queueString += `**Now Playing:** ${currentTrack.info.title} - Solicitado por ${currentTrack.info.requester.username}\n\n`;
             }
 
             if (queue.size) {
                 queueString += queue.map((track, index) => 
-                    `${index + 1}. ${track.info.title} - ${track.info.author}`
+                    `${index + 1}. ${track.info.title} - ${track.info.author} - Solicitado por ${track.info.requester.username}`
                 ).join('\n');
             } else {
                 queueString += "Não há mais músicas na fila.";
