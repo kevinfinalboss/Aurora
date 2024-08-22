@@ -1,6 +1,4 @@
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const { Classic } = require("musicard");
-const fs = require("fs");
 
 function setupRiffyEvents(client) {
     client.riffy.on("nodeConnect", node => {
@@ -12,23 +10,13 @@ function setupRiffyEvents(client) {
     });
 
     client.riffy.on("trackStart", async (player, track) => {
-        const musicard = await Classic({
-            thumbnailImage: track.info.thumbnail,
-            backgroundColor: "#070707",
-            backgroundImage: "https://cdn.discordapp.com/attachments/1220001571228880917/1220001571690123284/01.png?ex=660d5a01&is=65fae501&hm=a8cfb44844e61aa0fd01767cd363af048df28966c30d7b04a59f27fa45cf69c4&",
-            nameColor: "#FF7A00",
-            progressColor: "#FF7A00",
-            progressBarColor: "#5F2D00",
-            progress: 50,
-            name: track.info.title,
-            author: `By ${track.info.author}`,
-            authorColor: "#696969",
-            startTime: "0:00",
-            endTime: formatDuration(track.info.length),
-            timeColor: "#FF7A00"
-        });
+        const channel = client.channels.cache.get(player.textChannel);
+        if (!channel) return;
 
-        fs.writeFileSync("musicard.png", musicard);
+        // Delete previous now playing message if it exists
+        if (player.nowPlayingMessage) {
+            await player.nowPlayingMessage.delete().catch(console.error);
+        }
 
         const requester = track.info.requester;
         const details = `**Title:** ${track.info.title}\n` +
@@ -44,39 +32,13 @@ function setupRiffyEvents(client) {
                 url: 'https://discord.gg/xQF9f9yUEM'
             })
             .setDescription(details)
-            .setImage("attachment://musicard.png")
+            .setImage(track.info.thumbnail)
             .setFooter({ text: `Requested by ${requester.username}`, iconURL: requester.displayAvatarURL() });
 
-        const row = new ActionRowBuilder()
-            .addComponents(
-                new ButtonBuilder()
-                    .setCustomId('pause_resume')
-                    .setLabel('Pause/Resume')
-                    .setStyle(ButtonStyle.Primary),
-                new ButtonBuilder()
-                    .setCustomId('skip')
-                    .setLabel('Skip')
-                    .setStyle(ButtonStyle.Secondary),
-                new ButtonBuilder()
-                    .setCustomId('stop')
-                    .setLabel('Stop')
-                    .setStyle(ButtonStyle.Danger),
-                new ButtonBuilder()
-                    .setCustomId('queue')
-                    .setLabel('View Queue')
-                    .setStyle(ButtonStyle.Success)
-            );
+        const row = createMusicControlButtons();
 
-        const channel = client.channels.cache.get(player.textChannel);
-        
-        // Delete previous embeds in the channel
-        const messages = await channel.messages.fetch({ limit: 10 });
-        const botMessages = messages.filter(msg => msg.author.id === client.user.id && msg.embeds.length > 0);
-        await channel.bulkDelete(botMessages);
+        player.nowPlayingMessage = await channel.send({ embeds: [musicEmbed], components: [row] });
 
-        await channel.send({ embeds: [musicEmbed], components: [row], files: ["musicard.png"] });
-
-        // Reset inactivity timer
         clearTimeout(player.inactivityTimeout);
         player.inactivityTimeout = setTimeout(() => checkInactivity(player, channel), 60000);
     });
@@ -92,6 +54,11 @@ function setupRiffyEvents(client) {
                 url: 'https://discord.gg/xQF9f9yUEM'
             })
             .setDescription('**Bye Bye!, No more songs to play...**');
+        
+        if (player.nowPlayingMessage) {
+            await player.nowPlayingMessage.delete().catch(console.error);
+        }
+        
         await channel.send({ embeds: [embed] });
     });
 }
@@ -102,6 +69,28 @@ function formatDuration(duration) {
     const hours = Math.floor(duration / (1000 * 60 * 60));
 
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+}
+
+function createMusicControlButtons() {
+    return new ActionRowBuilder()
+        .addComponents(
+            new ButtonBuilder()
+                .setCustomId('pause_resume')
+                .setLabel('Pause/Resume')
+                .setStyle(ButtonStyle.Primary),
+            new ButtonBuilder()
+                .setCustomId('skip')
+                .setLabel('Skip')
+                .setStyle(ButtonStyle.Secondary),
+            new ButtonBuilder()
+                .setCustomId('stop')
+                .setLabel('Stop')
+                .setStyle(ButtonStyle.Danger),
+            new ButtonBuilder()
+                .setCustomId('queue')
+                .setLabel('View Queue')
+                .setStyle(ButtonStyle.Success)
+        );
 }
 
 function checkInactivity(player, channel) {
