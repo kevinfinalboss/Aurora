@@ -1,160 +1,175 @@
-const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ApplicationCommandOptionType } = require('discord.js');
-const YouTube = require('youtube-search-api');
+const { PermissionsBitField, InteractionType, EmbedBuilder } = require("discord.js");
+const { developers } = require("../../configuration/index");
+const { logger } = require("../../functions/logger");
 
 module.exports = {
-    name: "play",
-    description: "Toca uma música",
-    options: [
-        {
-            name: "query",
-            description: "Nome da música ou URL",
-            type: ApplicationCommandOptionType.String,
-            required: true,
-            autocomplete: true
+    name: 'interactionCreate',
+    execute: async (client, interaction) => {
+        if (interaction.type === InteractionType.ApplicationCommand) {
+            await handleApplicationCommand(client, interaction);
+        } else if (interaction.type === InteractionType.ApplicationCommandAutocomplete) {
+            await handleAutocomplete(client, interaction);
+        } else if (interaction.isButton()) {
+            await handleButtonInteraction(client, interaction);
         }
-    ],
-    async autocomplete(interaction) {
-        const focusedValue = interaction.options.getFocused();
-        if (focusedValue.length < 3) return interaction.respond([]);
-
-        try {
-            const searchResults = await YouTube.GetListByKeyword(focusedValue, false, 5);
-            const choices = searchResults.items.map(result => ({
-                name: `${result.title} - ${result.channelTitle}`.slice(0, 100),
-                value: result.id
-            }));
-            await interaction.respond(choices);
-        } catch (error) {
-            console.error('Error fetching autocomplete results:', error);
-            await interaction.respond([]);
-        }
-    },
-    run: async (client, interaction) => {
-        await interaction.deferReply();
-
-        const query = interaction.options.getString('query');
-        const voiceChannel = interaction.member.voice.channel;
-
-        if (!voiceChannel) {
-            return interaction.editReply({ content: 'Você precisa estar em um canal de voz para usar este comando!', ephemeral: true });
-        }
-
-        try {
-            const resolve = await client.riffy.resolve({ query: query, requester: interaction.user });
-            const { loadType, tracks, playlistInfo } = resolve;
-
-            if (loadType === 'empty') {
-                return interaction.editReply('Não foram encontrados resultados para esta busca.');
-            }
-
-            const player = client.riffy.createConnection({
-                guildId: interaction.guild.id,
-                voiceChannel: voiceChannel.id,
-                textChannel: interaction.channel.id,
-                deaf: true 
-            });
-
-            let embed;
-            if (loadType === 'playlist') {
-                for (const track of resolve.tracks) {
-                    track.info.requester = interaction.user;
-                    player.queue.add(track);
-                }
-                embed = new EmbedBuilder()
-                    .setAuthor({
-                        name: 'Playlist Adicionada à Fila',
-                        iconURL: 'https://cdn.discordapp.com/attachments/1156866389819281418/1157218651179597884/1213-verified.gif?ex=6517cf5a&is=65167dda&hm=cf7bc8fb4414cb412587ade0af285b77569d2568214d6baab8702ddeb6c38ad5&', 
-                        url: 'https://discord.gg/xQF9f9yUEM'
-                    })
-                    .setDescription(`**Nome da Playlist:** ${playlistInfo.name}\n**Número de Faixas:** ${tracks.length}`)
-                    .setColor('#14bdff')
-                    .setFooter({ text: `Solicitado por ${interaction.user.username}`, iconURL: interaction.user.displayAvatarURL() });
-            } else if (loadType === 'search' || loadType === 'track') {
-                const track = tracks.shift();
-                track.info.requester = interaction.user;
-                player.queue.add(track);
-
-                embed = new EmbedBuilder()
-                    .setAuthor({
-                        name: 'Música Adicionada à Fila',
-                        iconURL: 'https://cdn.discordapp.com/attachments/1156866389819281418/1157218651179597884/1213-verified.gif?ex=6517cf5a&is=65167dda&hm=cf7bc8fb4414cb412587ade0af285b77569d2568214d6baab8702ddeb6c38ad5&', 
-                        url: 'https://discord.gg/xQF9f9yUEM'
-                    })
-                    .setDescription(`**${track.info.title}** foi adicionada à fila e está pronta para tocar!`)
-                    .setColor('#14bdff')
-                    .setThumbnail(track.info.thumbnail)
-                    .addFields(
-                        { name: 'Duração', value: formatDuration(track.info.length), inline: true },
-                        { name: 'Artista', value: track.info.author, inline: true }
-                    )
-                    .setFooter({ text: `Solicitado por ${interaction.user.username}`, iconURL: interaction.user.displayAvatarURL() });
-            }
-
-            const row = createMusicControlButtons();
-
-            const messages = await interaction.channel.messages.fetch({ limit: 10 });
-            const botMessages = messages.filter(msg => msg.author.id === client.user.id && msg.embeds.length > 0);
-            await interaction.channel.bulkDelete(botMessages);
-
-            await interaction.editReply({ embeds: [embed], components: [row] });
-
-            if (!player.playing && !player.paused) return player.play();
-
-            player.inactivityTimeout = setTimeout(() => checkInactivity(player, interaction, client), 60000);
-        } catch (error) {
-            console.error(error);
-            return interaction.editReply('Ocorreu um erro ao tentar tocar a música. Por favor, tente novamente.');
-        }
-    },
+    }
 };
 
-function createMusicControlButtons() {
-    return new ActionRowBuilder()
-        .addComponents(
-            new ButtonBuilder()
-                .setCustomId('pause_resume')
-                .setLabel('Pausar/Retomar')
-                .setStyle(ButtonStyle.Primary),
-            new ButtonBuilder()
-                .setCustomId('skip')
-                .setLabel('Pular')
-                .setStyle(ButtonStyle.Secondary),
-            new ButtonBuilder()
-                .setCustomId('stop')
-                .setLabel('Parar')
-                .setStyle(ButtonStyle.Danger),
-            new ButtonBuilder()
-                .setCustomId('queue')
-                .setLabel('Ver Fila')
-                .setStyle(ButtonStyle.Success)
-        );
+async function handleApplicationCommand(client, interaction) {
+    try {
+        const command = client.slashCommands.get(interaction.commandName);
+
+        if (!command) {
+            return interaction.reply({
+                content: `${interaction.commandName} is not a valid command`,
+                ephemeral: true,
+            });
+        }
+
+        if (command.developerOnly && !developers.includes(interaction.user.id)) {
+            return interaction.reply({
+                content: `${interaction.commandName} is a developer only command`,
+                ephemeral: true,
+            });
+        }
+
+        if (command.userPermissions && !interaction.channel.permissionsFor(interaction.member).has(PermissionsBitField.resolve(command.userPermissions))) {
+            return interaction.reply({
+                content: `You do not have the required permissions to use this command. You need the following permissions: ${command.userPermissions.join(", ")}`,
+                ephemeral: true,
+            });
+        }
+
+        if (command.clientPermissions && !interaction.channel.permissionsFor(interaction.guild.members.me).has(PermissionsBitField.resolve(command.clientPermissions))) {
+            return interaction.reply({
+                content: `I do not have the required permissions to use this command. I need the following permissions: ${command.clientPermissions.join(", ")}`,
+                ephemeral: true,
+            });
+        }
+
+        if (command.guildOnly && !interaction.guildId) {
+            return interaction.reply({
+                content: `${interaction.commandName} is a guild only command`,
+                ephemeral: true,
+            });
+        }
+
+        await command.run(client, interaction, interaction.options);
+    } catch (err) {
+        logger("An error occurred while processing a slash command:", "error");
+        console.error('Erro ao processar comando de aplicação:', err);
+
+        return interaction.reply({
+            content: `An error has occurred while processing the command: ${err.message}`,
+            ephemeral: true,
+        }).catch(replyErr => {
+            console.error('Erro ao tentar responder após falha no comando:', replyErr);
+        });
+    }
 }
 
-function formatDuration(duration) {
-    const seconds = Math.floor((duration / 1000) % 60);
-    const minutes = Math.floor((duration / (1000 * 60)) % 60);
-    const hours = Math.floor(duration / (1000 * 60 * 60));
+async function handleAutocomplete(client, interaction) {
+    try {
+        const command = client.slashCommands.get(interaction.commandName);
 
-    return `${hours > 0 ? `${hours}:` : ''}${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        if (!command || !command.autocomplete) {
+            return;
+        }
+
+        await Promise.race([
+            command.autocomplete(interaction),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Autocomplete timeout')), 3000))
+        ]);
+    } catch (error) {
+        if (error.message === 'Autocomplete timeout') {
+            console.error('Autocomplete timeout for command:', interaction.commandName);
+        } else if (error.code === 10062) {
+            console.error('Erro de interação desconhecida (10062). A interação provavelmente expirou.');
+        } else {
+            console.error('Erro ao processar autocomplete:', error);
+        }
+        logger("An error occurred while processing autocomplete:", "error");
+    }
 }
 
-function checkInactivity(player, interaction, client) {
-    const voiceChannel = interaction.guild.channels.cache.get(player.voiceChannel);
-    if (voiceChannel && voiceChannel.members.size === 1) {
-        player.destroy();
-        const embed = new EmbedBuilder()
-            .setColor('#FF0000')
-            .setAuthor({
-                name: 'Inatividade Detectada',
-                iconURL: client.user.displayAvatarURL()
-            })
-            .setDescription('Saí do canal de voz devido à inatividade.')
-            .setThumbnail(client.user.displayAvatarURL())
-            .setFooter({ text: 'Música Encerrada', iconURL: client.user.displayAvatarURL() })
-            .setTimestamp();
+async function handleButtonInteraction(client, interaction) {
+    const { customId } = interaction;
+    const player = client.riffy.players.get(interaction.guildId);
 
-        interaction.channel.send({ embeds: [embed] });
-    } else {
-        player.inactivityTimeout = setTimeout(() => checkInactivity(player, interaction, client), 15000);
+    if (!player) {
+        return interaction.reply({ content: "Não há player ativo neste servidor.", ephemeral: true });
+    }
+
+    const embed = new EmbedBuilder()
+        .setColor('#14bdff')
+        .setAuthor({
+            name: 'Controle de Música',
+            iconURL: client.user.displayAvatarURL(),
+            url: 'https://discord.gg/xQF9f9yUEM'
+        })
+        .setFooter({ text: `Solicitado por ${interaction.user.username}`, iconURL: interaction.user.displayAvatarURL() })
+        .setTimestamp();
+
+    switch (customId) {
+        case 'pause_resume':
+            player.pause(!player.paused);
+            embed.setDescription(`Música ${player.paused ? "pausada" : "resumida"} por ${interaction.user}.`);
+            await interaction.reply({ embeds: [embed] });
+            break;
+        case 'skip':
+            player.stop();
+            embed.setDescription(`Música pulada por ${interaction.user}.`);
+            await interaction.reply({ embeds: [embed] });
+            break;
+        case 'stop':
+            player.destroy();
+            embed.setDescription(`Player parado e fila limpa por ${interaction.user}.`);
+            await interaction.reply({ embeds: [embed] });
+            break;
+        case 'queue':
+            const queue = player.queue;
+            const currentTrack = player.currentTrack;
+            let queueString = "";
+
+            if (currentTrack) {
+                queueString += `**Now Playing:** ${currentTrack.info.title} - Solicitado por ${currentTrack.info.requester.username}\n\n`;
+            }
+
+            if (queue.size) {
+                queueString += queue.map((track, index) => 
+                    `${index + 1}. ${track.info.title} - ${track.info.author} - Solicitado por ${track.info.requester.username}`
+                ).join('\n');
+            } else {
+                queueString += "Não há mais músicas na fila.";
+            }
+
+            const queueEmbed = new EmbedBuilder()
+                .setColor('#14bdff')
+                .setTitle('Queue')
+                .setDescription(queueString)
+                .setFooter({ text: `Total de músicas: ${queue.size}` });
+
+            await interaction.reply({ embeds: [queueEmbed], ephemeral: true });
+            break;
+        case 'view_commands':
+            const commandsEmbed = new EmbedBuilder()
+                .setColor('#4B0082')
+                .setTitle('📜 Lista de Comandos')
+                .setDescription('Aqui está uma lista dos principais comandos disponíveis:')
+                .addFields(
+                    { name: '/config', value: 'Configure as opções do bot para o seu servidor' },
+                    { name: '/play', value: 'Reproduza uma música ou playlist' },
+                    { name: '/clear', value: 'Bane um usuário do servidor' },
+                    { name: '/kick', value: 'Expulsa um usuário do servidor' },
+                    { name: '/mute', value: 'Silencia um usuário temporariamente' },
+                    { name: '/warn', value: 'Dá um aviso a um usuário' },
+                    { name: '/stats', value: 'Mostra estatísticas do servidor' },
+                    { name: '/help', value: 'Exibe a lista completa de comandos e suas descrições' }
+                )
+                .setTimestamp()
+                .setFooter({ text: 'Use /help para mais detalhes sobre cada comando', iconURL: client.user.displayAvatarURL() });
+
+            await interaction.reply({ embeds: [commandsEmbed], ephemeral: true });
+            break;
     }
 }
