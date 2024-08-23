@@ -34,7 +34,6 @@ async function getConfigValues() {
             const response = await client.send(command);
             config[key] = response.Parameter.Value;
 
-            console.log(`Parâmetro SSM '${param}' recuperado com sucesso.`);
         } catch (error) {
             console.error(`Erro ao recuperar o parâmetro '${param}': ${error.message}`);
         }
