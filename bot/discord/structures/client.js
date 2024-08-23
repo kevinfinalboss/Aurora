@@ -1,9 +1,12 @@
-const { readdirSync } = require("fs");
-const { REST, Routes, Client, Collection, EmbedBuilder, GatewayIntentBits } = require('discord.js');
+const { Client, Collection, GatewayIntentBits, EmbedBuilder } = require('discord.js');
+const { setupRiffy } = require('./music/riffy-config');
+const { setupRiffyEvents } = require('./music/riffy-events');
+const { scheduleQuotationUpdates } = require('./schedules/quotation');
 const { loadConfig } = require("./configuration/index");
-const { logger } = require("./functions/logger");
+const { logger } = require('./functions/logger');
 const path = require("path");
-const { Riffy } = require("riffy");
+const { readdirSync } = require("fs");
+const { REST, Routes } = require('discord.js');
 
 async function initializeClient() {
     const chalk = (await import('chalk')).default;
@@ -28,46 +31,28 @@ async function initializeClient() {
         ]
     });
 
-    const nodes = [
-        {
-            host: "37.114.42.191",
-            port: 9906, 
-            password: "danteisnttaken", 
-            secure: false
-        },
-    ];
-
-    client.riffy = new Riffy(client, nodes, {
-        send: (payload) => {
-            const guild = client.guilds.cache.get(payload.d.guild_id);
-            if (guild) guild.shard.send(payload);
-        },
-        defaultSearchPlatform: "ytmsearch",
-        restVersion: "v4" 
-    });
-
-    client.on("ready", () => {
-        client.riffy.init(client.user.id);
-    });
-
-    client.on("raw", (d) => {
-        client.riffy.updateVoiceState(d);
-    });
-
-    client.riffy.on("nodeConnect", node => {
-        console.log(`Node "${node.name}" connected.`)
-    });
-
-    client.riffy.on("nodeError", (node, error) => {
-        console.log(`Node "${node.name}" encountered an error: ${error.message}.`)
-    });
-
     client.commands = new Collection();
     client.aliases = new Collection();
     client.slashCommands = new Collection();
 
     client.bannedWords = ['palavrão1', 'palavrão2', 'spam'];
     client.maxMentions = 5;
+
+    try {
+        await setupRiffy(client, config);
+        if (client.riffy) {
+            setupRiffyEvents(client);
+        } else {
+            logger("Riffy não foi inicializado corretamente. Eventos do Riffy não serão configurados.", "warn");
+        }
+    } catch (error) {
+        logger(`Erro ao configurar Riffy: ${error.message}`, "error");
+    }
+
+    client.on("ready", () => {
+        scheduleQuotationUpdates(client);
+        console.log(chalk.green(`Bot logado com sucesso como ${client.user.tag}`));
+    });
 
     client.on('messageCreate', async (message) => {
         if (message.author.bot) return;
@@ -111,7 +96,6 @@ async function initializeClient() {
 
     console.log(chalk.blue("Iniciando login do bot..."));
     await client.login(client_token);
-    console.log(chalk.green(`Bot logado com sucesso como ${client.user.tag}`));
 
     process.on('unhandledRejection', error => {
         logger("Ocorreu um erro de rejeição não tratada.", "error");
@@ -283,4 +267,4 @@ async function load_slash_commands(client, client_id, client_token, chalk, Table
     }
 }
 
-module.exports = initializeClient;
+module.exports = { initializeClient };
