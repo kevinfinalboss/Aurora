@@ -92,6 +92,13 @@ class GuildRepository {
         
         return result;
     }
+
+    async getAllGuilds() {
+        logger('Buscando todas as guilds', 'info');
+        const guilds = await Guild.find({});
+        logger(`${guilds.length} guilds recuperadas`, 'info');
+        return guilds;
+    }
 }
 
 module.exports = new GuildRepository();
