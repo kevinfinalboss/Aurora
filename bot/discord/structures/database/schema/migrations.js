@@ -52,6 +52,11 @@ const guildSchema = new mongoose.Schema({
     automod: { type: automodSchema, default: () => ({}) },
     welcomeChannelId: { type: String, default: null },
     leaveChannelId: { type: String, default: null },
+    quotationChannelId: { type: String, default: null },
+    lastQuotation: {
+        USD: { type: Number, default: null },
+        EUR: { type: Number, default: null }
+    },
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },
 }, { timestamps: true });
