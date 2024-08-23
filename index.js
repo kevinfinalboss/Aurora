@@ -1,4 +1,3 @@
-const initializeClient = require("./bot/discord/structures/client");
 const { ShardingManager } = require("discord.js");
 const { loadConfig } = require("./bot/discord/structures/configuration/index");
 const { logger } = require("./bot/discord/structures/functions/logger");
@@ -10,13 +9,8 @@ async function startBot() {
     try {
         const config = await loadConfig();
 
-        if (!config.client_id) {
-            logger("Couldn't find the client ID in the config file.", "error");
-            process.exit(1);
-        }
-
-        if (!config.client_token) {
-            logger("Couldn't find the client token in the config file.", "error");
+        if (!config.client_id || !config.client_token) {
+            logger("Couldn't find the client ID or token in the config file.", "error");
             process.exit(1);
         }
 
@@ -31,29 +25,33 @@ async function startBot() {
             });
 
             await manager.spawn();
+            logger("Sharding manager started successfully.", "info");
         } else {
-            console.log("Iniciando o bot sem sharding...");
+            logger("Iniciando o bot sem sharding...", "info");
             try {
+                const { initializeClient } = require("./bot/discord/structures/client");
                 client = await initializeClient();
-                console.log("Bot iniciado com sucesso.");
+                logger("Bot iniciado com sucesso.", "info");
             } catch (error) {
-                console.error("Erro ao iniciar o bot:", error);
+                logger(`Erro ao iniciar o bot: ${error.message}`, "error");
+                console.error(error);
                 process.exit(1);
             }
         }
 
         if (config.database) {
-            console.log("Conectando ao banco de dados...");
+            logger("Conectando ao banco de dados...", "info");
             try {
                 await require("./bot/discord/structures/database/connect").connect(config.mongodb_url);
-                console.log("Conexão com o banco de dados estabelecida com sucesso.");
+                logger("Conexão com o banco de dados estabelecida com sucesso.", "info");
             } catch (error) {
-                console.error("Erro ao conectar ao banco de dados:", error);
+                logger(`Erro ao conectar ao banco de dados: ${error.message}`, "error");
+                console.error(error);
                 process.exit(1);
             }
         }
 
-        console.log("Processo de inicialização concluído.");
+        logger("Processo de inicialização concluído.", "info");
     } catch (error) {
         logger(`Failed to start the bot: ${error.message}`, "error");
         console.error("Stack trace completo:", error);
@@ -61,21 +59,26 @@ async function startBot() {
     }
 }
 
-function gracefulShutdown() {
-    console.log("Encerrando o bot de forma graciosa...");
+async function gracefulShutdown() {
+    logger("Encerrando o bot de forma graciosa...", "info");
     if (client) {
-        client.destroy();
+        await client.destroy();
     }
     if (manager) {
-        manager.shards.forEach(shard => shard.kill());
+        await Promise.all(manager.shards.map(shard => shard.kill()));
     }
-    mongoose.connection.close(false, () => {
-        console.log("Conexão com o banco de dados fechada.");
-        process.exit(0);
-    });
+    if (mongoose.connection.readyState === 1) {
+        await mongoose.connection.close(false);
+        logger("Conexão com o banco de dados fechada.", "info");
+    }
+    process.exit(0);
 }
 
 process.on("SIGINT", gracefulShutdown);
 process.on("SIGTERM", gracefulShutdown);
 
-startBot();
+startBot().catch(error => {
+    logger(`Erro não tratado durante a inicialização: ${error.message}`, "error");
+    console.error(error);
+    process.exit(1);
+});
