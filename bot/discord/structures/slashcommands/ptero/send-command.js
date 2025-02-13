@@ -29,8 +29,8 @@ async function fetchServers() {
 }
 
 module.exports = {
-    name: 'server-control',
-    description: 'Controla os servidores do Pterodactyl',
+    name: 'send-command',
+    description: 'Envia um comando para o servidor selecionado',
     
     options: [
         {
@@ -41,15 +41,10 @@ module.exports = {
             autocomplete: true
         },
         {
-            name: 'action',
+            name: 'command',
             type: ApplicationCommandOptionType.String,
-            description: 'Escolha a ação',
-            required: true,
-            choices: [
-                { name: 'Ligar', value: 'start' },
-                { name: 'Desligar', value: 'stop' },
-                { name: 'Reiniciar', value: 'restart' }
-            ]
+            description: 'Digite o comando a ser enviado',
+            required: true
         }
     ],
 
@@ -69,33 +64,31 @@ module.exports = {
 
         const PteroClient = await getPteroClient();
         const serverID = interaction.options.getString('server');
-        const action = interaction.options.getString('action');
+        const command = interaction.options.getString('command');
 
         try {
-            await PteroClient.sendPowerAction(serverID, action);
-            const actionText = action === 'start' ? '🔵 Ligado' : action === 'stop' ? '🔴 Desligado' : '🔄 Reiniciado';
+            await PteroClient.sendRequest('POST', `servers/${serverID}/command`, { command });
 
             const embed = new EmbedBuilder()
-                .setTitle('✅ Ação Executada')
-                .setDescription(`O servidor **${serverID}** foi **${actionText}** com sucesso!`)
-                .setColor(action === 'start' ? 0x00ff00 : action === 'stop' ? 0xff0000 : 0xffa500)
-                .setThumbnail('https://i.imgur.com/HbElFNf.png')
+                .setTitle('✅ Comando Enviado')
+                .setDescription(`O comando foi enviado com sucesso para o servidor **${serverID}**!`)
+                .setColor(0x00ff00)
                 .addFields(
-                    { name: '🔍 Servidor', value: `\`${serverID}\``, inline: true },
-                    { name: '⚡ Ação', value: `\`${actionText}\``, inline: true },
-                    { name: '📅 Horário', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: false }
+                    { name: '📡 Servidor', value: `\`${serverID}\``, inline: true },
+                    { name: '💬 Comando', value: `\`${command}\``, inline: false },
+                    { name: '⏰ Horário', value: `<t:${Math.floor(Date.now() / 1000)}:F>`, inline: false }
                 )
                 .setFooter({ text: 'Pterodactyl API', iconURL: 'https://i.imgur.com/1XfV7aM.png' })
                 .setTimestamp();
 
             await interaction.editReply({ embeds: [embed] });
         } catch (error) {
-            console.error('Erro ao controlar servidor:', error);
+            console.error('Erro ao enviar comando:', error);
             await interaction.editReply({
                 embeds: [
                     new EmbedBuilder()
-                        .setTitle('❌ Erro ao executar ação')
-                        .setDescription('Houve um erro ao tentar controlar o servidor. Verifique se o servidor está acessível e tente novamente.')
+                        .setTitle('❌ Erro ao Enviar Comando')
+                        .setDescription('Houve um erro ao tentar enviar o comando para o servidor. Verifique se ele está acessível e tente novamente.')
                         .setColor(0xff0000)
                         .setFooter({ text: 'Pterodactyl API', iconURL: 'https://i.imgur.com/1XfV7aM.png' })
                         .setTimestamp()
