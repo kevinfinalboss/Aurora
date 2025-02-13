@@ -3,20 +3,26 @@ version: '3.8'
 services:
   bot:
     build: .
-    container_name: discord-bot
+    container_name: void-bot
     restart: unless-stopped
-    env_file:
-      - .env
+    ports:
+      - "8080:80"
     volumes:
-      - ./:/usr/src/app
-      - /usr/src/app/node_modules
+      - ./logs:/app/logs
+      - ./events:/app/events
+      - ./commands:/app/commands
+      - ./internal:/app/internal
+      - ./api:/app/api
+      - ./config:/app/config
+      - ./scripts:/app/scripts
+      - ./config.yaml:/app/config.yaml
     deploy:
       resources:
         limits:
           cpus: '0.5'
-          memory: 512M
-        reservations:
           memory: 256M
+        reservations:
+          memory: 128M
     networks:
       - bot-network
 
