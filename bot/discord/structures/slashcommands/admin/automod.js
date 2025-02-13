@@ -1,4 +1,4 @@
-const { Client, CommandInteraction, PermissionFlagsBits, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ComponentType } = require("discord.js");
+const { PermissionFlagsBits, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ComponentType } = require("discord.js");
 const guildRepository = require('../../database/repository/guildRepository');
 const { logger } = require('../../functions/logger');
 

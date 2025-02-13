@@ -19,7 +19,9 @@ async function getConfigValues() {
         lolEsportsApiKey: "/keys/bot/aurora/discord/lolesports/apikey",
         groq_api_key: "/keys/bot/aurora/discord/groq/apikey", 
         lavalink_url: "/keys/bot/aurora/lavalink/url",
-        lavalink_password: "/keys/bot/aurora/lavalink/password"
+        lavalink_password: "/keys/bot/aurora/lavalink/password",
+        pterodactyl_api_key: "/keys/bot/aurora/pterodactyl/apikey",
+        pterodactyl_url: "/keys/bot/aurora/pterodactyl/url"
     };
 
     const config = {};
