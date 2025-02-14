@@ -17,7 +17,7 @@ async function setupRiffy(client) {
         const nodes = [
             {
                 host: config.lavalink_url,
-                port: 2333,
+                port: 2334,
                 password: config.lavalink_password,
                 secure: false
             },
