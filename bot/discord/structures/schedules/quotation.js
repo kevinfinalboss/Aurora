@@ -110,7 +110,6 @@ async function updateQuotationEmbed(client) {
 
     for (const guild of guilds) {
         if (!guild.quotationChannelId) {
-            logger(`Guild ${guild.guildId} não tem canal de cotações configurado`, 'info');
             continue;
         }
 
