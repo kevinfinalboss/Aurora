@@ -1,31 +1,25 @@
 version: '3.8'
 
 services:
-  bot:
+  aurorabot:
     build: .
-    container_name: void-bot
+    container_name: aurorabot
     restart: unless-stopped
     ports:
-      - "8080:80"
+      - "3001:80"
     volumes:
-      - ./logs:/app/logs
-      - ./events:/app/events
-      - ./commands:/app/commands
-      - ./internal:/app/internal
-      - ./api:/app/api
-      - ./config:/app/config
-      - ./scripts:/app/scripts
-      - ./config.yaml:/app/config.yaml
+      - ./:/usr/src/app
+      - /usr/src/app/node_modules
     deploy:
       resources:
         limits:
           cpus: '0.5'
-          memory: 256M
+          memory: 512M
         reservations:
-          memory: 128M
+          memory: 256M
     networks:
-      - bot-network
+      - aurora-network
 
 networks:
-  bot-network:
+  aurora-network:
     driver: bridge
