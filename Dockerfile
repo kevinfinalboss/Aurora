@@ -1,26 +1,18 @@
-FROM golang:1.23-alpine AS builder
+FROM node:20-slim
 
-RUN apk add --no-cache git gcc musl-dev
+RUN apt-get update && apt-get install -y \
+    ffmpeg \
+    libreoffice \
+    python3 \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-COPY go.mod go.sum ./
-RUN go mod download
+COPY package*.json ./
+
+RUN npm install
 
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=linux go build -o main .
-
-FROM alpine:latest
-
-RUN apk add --no-cache ffmpeg python3
-
-WORKDIR /app
-
-COPY --from=builder /app/main .
-
-RUN chmod +x /app/main
-
-EXPOSE 80
-
-CMD ["./main"]
+CMD [ "npm", "start" ]
