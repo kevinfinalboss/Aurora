@@ -1,19 +1,15 @@
+version: '3.8'
+
 services:
-  voidbot:
+  aurorabot:
     build: .
-    container_name: voidbot
+    container_name: aurorabot
     restart: unless-stopped
     ports:
-      - "3002:80"
+      - "3001:80"
     volumes:
-      - ./logs:/app/logs
-      - ./config:/app/config
-      - ./api:/app/api
-      - ./commands:/app/commands
-      - ./events:/app/events
-      - ./internal:/app/internal
-      - ./scripts:/app/scripts
-      - ./config.yaml:/app/config.yaml
+      - ./:/usr/src/app
+      - /usr/src/app/node_modules
     deploy:
       resources:
         limits:
@@ -22,10 +18,8 @@ services:
         reservations:
           memory: 256M
     networks:
-      - voidbot-network
+      - aurora-network
 
 networks:
-  voidbot-network:
+  aurora-network:
     driver: bridge
-
-
